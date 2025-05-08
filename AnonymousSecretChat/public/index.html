@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Secret Chat</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(to right, #ece9e6, #ffffff);
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      background-color: #2c3e50;
+      color: white;
+      padding: 5px;
+      text-align: center;
+      font-size: 28px;
+      font-weight: 600;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 20px auto;
+      padding: 20px;
+    }
+
+    .username-container,
+    .chat-container {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+      padding: 30px;
+    }
+
+    .username-container h2,
+    .chat-container h2 {
+      margin-bottom: 20px;
+      color: #2c3e50;
+    }
+
+    .username-container input,
+    .input-container input {
+      width: 70%;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      margin-right: 10px;
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+
+    .username-container button,
+    .input-container button,
+    .upload-btn {
+      padding: 12px 18px;
+      background-color: #3498db;
+      border: none;
+      color: white;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .username-container button:hover,
+    .input-container button:hover,
+    .upload-btn:hover {
+      background-color: #2980b9;
+    }
+
+    .chat-container {
+      display: none;
+      flex-direction: column;
+      gap: 20px;
+      height: 504px;
+    }
+
+    .chat-window {
+      flex-grow: 1;
+      height: 60vh;
+      overflow-y: auto;
+      background-color: #fafafa;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+
+    .message {
+      padding: 5px;
+      background-color: #ecf0f1;
+      margin-bottom: 10px;
+      border-radius: 4px;
+    }
+
+    .joined-message {
+      background-color: #dff0d8;
+      font-style: italic;
+      text-align: center;
+    }
+
+    .left-message {
+      background-color: #ddb3b0;
+      font-style: italic;
+      text-align: center;
+    }
+
+    .message img {
+      max-width: 100%;
+      border-radius: 8px;
+      margin-top: 8px;
+      cursor: pointer;
+    }
+
+    .input-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .zoomed-image {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .zoomed-image img {
+      max-width: 90%;
+      max-height: 90%;
+      cursor: zoom-out;
+    }
+
+    #imageInput {
+      margin-top: 10px;
+    }
+    .system-message-wrapper {
+      display: flex;
+      justify-content: center;
+      width: 100%;
+      margin: 10px 0;
+    }
+    .sender-name {
+      font-weight: bold;
+      color: #007bff; /* Blue or change to anything you like */
+      margin-right: 4px;
+    }
+
+    .timestamp {
+      color: #888;
+      font-size: 0.8em;
+      margin-left: 10px;
+    }
+    .sender-msg{
+      word-wrap: break-word;
+    }
+    
+    
+  </style>
+</head>
+<body>
+
+<header>Anonymous Secret Chat</header>
+
+<div class="container">
+  <div id="username-container" class="username-container">
+    <h2>Enter Your Username</h2>
+    <form id="usernameForm">
+      <input type="text" id="usernameInput" placeholder="Enter username" required />
+      <button type="submit">Start Chat</button>
+    </form>
+  </div>
+
+  <div id="chat-container" class="chat-container">
+    <h2>Welcome, <span id="usernameDisplay"></span></h2>
+    <div id="chat-window" class="chat-window"></div>
+
+    <form id="messageForm">
+      <div class="input-container">
+        <input type="text" id="messageInput" placeholder="Type a message..." required />
+        <button type="submit">Send</button>
+      </div>
+    </form>
+
+    <form id="imageForm" enctype="multipart/form-data">
+      <input type="file" id="imageInput" accept="image/*" />
+      <button type="submit" class="upload-btn">Upload Image</button>
+    </form>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    // Request notification permission when the page loads
+    if (Notification.permission !== "granted") {
+      Notification.requestPermission();
+    }
+  
+    // Socket connection code
+    const socket = io();
+    const usernameContainer = document.getElementById('username-container');
+    const chatContainer = document.getElementById('chat-container');
+    const usernameInput = document.getElementById('usernameInput');
+    const messageInput = document.getElementById('messageInput');
+    const messageForm = document.getElementById('messageForm');
+    const imageForm = document.getElementById('imageForm');
+    const imageInput = document.getElementById('imageInput');
+    const chatWindow = document.getElementById('chat-window');
+    const usernameDisplay = document.getElementById('usernameDisplay');
+  
+    let zoomedImageModal = null;
+  
+    usernameContainer.style.display = 'block';
+    chatContainer.style.display = 'none';
+  
+    document.getElementById('usernameForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const username = usernameInput.value.trim();
+      if (username) {
+        socket.emit('register', username);
+        usernameDisplay.textContent = username;
+        usernameContainer.style.display = 'none';
+        chatContainer.style.display = 'flex';
+      }
+    });
+  
+    socket.on('user joined', (message) => {
+      const wrapper = document.createElement('div');
+      wrapper.classList.add('system-message-wrapper'); // Wrapper for styling
+      const joinMessageDiv = document.createElement('div');
+      joinMessageDiv.classList.add('message', 'joined-message');
+      joinMessageDiv.textContent = message;
+      wrapper.appendChild(joinMessageDiv);
+      chatWindow.appendChild(wrapper);
+      chatWindow.scrollTop = chatWindow.scrollHeight;
+    });
+  
+    socket.on('user left', (message) => {
+      const wrapper = document.createElement('div');
+      wrapper.classList.add('system-message-wrapper'); // Wrapper for styling
+      const leftMessageDiv = document.createElement('div');
+      leftMessageDiv.classList.add('message', 'left-message');
+      leftMessageDiv.textContent = message;
+      wrapper.appendChild(leftMessageDiv);
+      chatWindow.appendChild(wrapper);
+      chatWindow.scrollTop = chatWindow.scrollHeight;
+    });
+  
+    socket.on('chat message', (msgObj) => {
+      const messageDiv = document.createElement('div');
+      messageDiv.classList.add('message');
+      
+      if (msgObj.type === 'image') {
+        const image = document.createElement('img');
+        image.src = msgObj.msg;
+        image.addEventListener('click', () => zoomImage(msgObj.msg));
+        messageDiv.appendChild(image);
+      } else {
+        const senderSpan = document.createElement('span');
+        senderSpan.classList.add('sender-name');
+        senderSpan.textContent = `${msgObj.sender}: `;
+  
+        const messageSpan = document.createElement('span');
+        messageSpan.classList.add('sender-msg');
+        messageSpan.textContent = msgObj.msg;
+  
+        // Create and format the timestamp
+        const timestampSpan = document.createElement('span');
+        timestampSpan.classList.add('timestamp');
+        const timestamp = new Date(msgObj.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        timestampSpan.textContent = ` ${timestamp}`;
+  
+        // Append sender, message, and timestamp to the messageDiv
+        messageDiv.appendChild(senderSpan);
+        messageDiv.appendChild(messageSpan);
+        messageDiv.appendChild(timestampSpan);
+      }
+  
+      chatWindow.appendChild(messageDiv);
+      chatWindow.scrollTop = chatWindow.scrollHeight;
+  
+      // Show notification if the user is not currently viewing the chat
+      if (Notification.permission === "granted" && document.hidden) {
+        showNotification(msgObj);
+      }
+    });
+  
+    function showNotification(msgObj) {
+      const notification = new Notification(`New message from ${msgObj.sender}`, {
+        body: msgObj.msg,
+        icon: '/path/to/icon.png' // Optional: Add an icon to your notification
+      });
+  
+      // Add an event listener to open the chat window when the user clicks on the notification
+      notification.onclick = () => {
+        window.focus();
+      };
+    }
+  
+    messageForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const msg = messageInput.value.trim();
+      if (msg) {
+        socket.emit('chat message', msg);
+        messageInput.value = '';
+      }
+    });
+  
+    imageForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData();
+      formData.append('image', imageInput.files[0]);
+  
+      const response = await fetch('/upload', {
+        method: 'POST',
+        body: formData,
+      });
+  
+      const data = await response.json();
+  
+      if (data.imageUrl) {
+        socket.emit('send image', data.imageUrl);
+        imageInput.value = ''; // Clear the input
+      }
+    });
+  
+    function zoomImage(imageUrl) {
+      if (zoomedImageModal) {
+        zoomedImageModal.remove();
+      }
+  
+      zoomedImageModal = document.createElement('div');
+      zoomedImageModal.classList.add('zoomed-image');
+      const zoomedImage = document.createElement('img');
+      zoomedImage.src = imageUrl;
+      zoomedImage.addEventListener('click', () => {
+        zoomedImageModal.remove();
+        zoomedImageModal = null;
+      });
+  
+      zoomedImageModal.appendChild(zoomedImage);
+      document.body.appendChild(zoomedImageModal);
+    }
+  });
+  
+</script>
+
+</body>
+</html>
