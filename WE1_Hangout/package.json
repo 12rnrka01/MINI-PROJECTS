@@ -1,0 +1,21 @@
+{
+    "name": "we1-hangout",
+    "version": "1.0.0",
+    "description": "Simple multiplayer games starting with Tic Tac Toe",
+    "main": "app.js",
+    "scripts": {
+        "start": "node app.js",
+        "dev": "nodemon app.js"
+    },
+    "dependencies": {
+        "dotenv": "^16.5.0",
+        "ejs": "^3.1.9",
+        "express": "^4.18.2",
+        "mongodb": "^5.7.0",
+        "socket.io": "^4.7.2",
+        "uuid": "^9.0.0"
+    },
+    "devDependencies": {
+        "nodemon": "^3.0.1"
+    }
+}

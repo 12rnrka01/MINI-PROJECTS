@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title || 'We1 Hangout' %></title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+    <header>
+        <nav>
+            <h1>🎮 We1 Hangout</h1>
+            <div class="nav-links">
+                <a href="/">Home</a>
+                <a href="/tic-tac-toe">Tic Tac Toe</a>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <%- body %>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 We1 Hangout - Simple Multiplayer Games</p>
+    </footer>
+
+    <script src="/js/main.js"></script>
+</body>
+</html>

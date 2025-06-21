@@ -1,0 +1,76 @@
+productName: We1 Hangout
+
+productFeatures:
+- Chat Room
+- Tic Tac Toe Game
+- Coin Flip Game
+- Rock Paper Scissors Game
+- Dots and Boxes Game (Multiplayers)
+- Others (to be added)
+
+productControlBy:
+- Admin Panel
+  - User Management
+  - Game Management
+  - Chat Management
+  - Notifications (Push Notifications,Email Notifications,Emergency Notifications)
+  - Reports
+  - Analytics
+  - Live Updates
+  - Monitoring
+  - Security
+  - Backup
+  - Maintenance
+
+productTechStack:
+- Frontend: HTML, CSS, JS
+- Backend: Node.js, Express.js,Socket.io,ejs
+- Deployment: Vercel,GitHub
+- Database: MongoDB
+- Push Notifications: Firebase Cloud Messaging
+- Email Notifications: Nodemailer
+- Emergency Notifications: Twilio
+- Reports: Excel
+- Live Updates: WebSockets
+- Monitoring: New Relic
+- Security: JWT
+- Backup: MongoDB Atlas
+- Maintenance: GitHub Actions
+
+
+codeStructure:
+ 
+ -modules
+  -common
+    -dbConnection.js
+    -socket.js
+    -errorHandler.js
+    -errorPages.js
+    -middleware.js
+    -gracefulShutdown.js  
+  -core
+  -admin
+  -games
+   -tic-tac-toe
+   -coin-flip
+   -rock-paper-scissors
+   -dots-and-boxes
+   -others
+  -chat
+ -node_modules
+ -public
+  ├── css/style.css
+  ├── js/main.js
+  ├── images/
+  ├── uploads/
+ -src
+  ├── views/
+  │   └── common/
+  │       ├── layout.ejs
+  │       ├── 404.ejs
+  │       ├── 500.ejs
+  │       ├── error.ejs
+  │       └── status.ejs
+ -package.json
+ -package-lock.json
+ -README.md

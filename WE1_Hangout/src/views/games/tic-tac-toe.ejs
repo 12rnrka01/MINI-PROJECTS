@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic Tac Toe - We1 Hangout</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎯 Tic Tac Toe</h1>
+            <a href="/" class="btn btn-secondary">← Back to Home</a>
+        </header>
+
+        <% if (!roomId) { %>
+        <!-- Join/Create Room Form -->
+        <div class="room-setup">
+            <div class="form-container">
+                <h2>Join or Create Game</h2>
+                
+                <div class="form-section">
+                    <h3>Create New Room</h3>
+                    <form action="/tic-tac-toe/create" method="POST">
+                        <input type="text" name="playerName" placeholder="Enter your name" required maxlength="20">
+                        <button type="submit" class="btn btn-primary">Create Room</button>
+                    </form>
+                </div>
+
+                <div class="divider">OR</div>
+
+                <div class="form-section">
+                    <h3>Join Existing Room</h3>
+                    <form action="/tic-tac-toe/join" method="POST">
+                        <input type="text" name="playerName" placeholder="Enter your name" required maxlength="20">
+                        <input type="text" name="roomId" placeholder="Enter room ID" required maxlength="10">
+                        <button type="submit" class="btn btn-success">Join Room</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <% } else { %>
+        <!-- Game Room with New Layout -->
+        <div class="game-room">
+            <!-- Main Game Area -->
+            <div class="game-main">
+                <div class="room-info">
+                    <h2>Room: <span id="room-id"><%= roomId %></span></h2>
+                    <p>Player: <strong><%= playerName %></strong></p>
+                    
+                    <% if (shareUrl) { %>
+                    <div class="share-section">
+                        <p>Share this link with a friend:</p>
+                        <div class="share-url">
+                            <input type="text" id="share-url" value="<%= shareUrl %>" readonly>
+                            <button onclick="copyShareUrl()" class="btn btn-small">Copy</button>
+                        </div>
+                    </div>
+                    <% } %>
+                </div>
+
+                <div class="game-status">
+                    <div id="status-message">Waiting for players...</div>
+                    <div id="players-list"></div>
+                </div>
+
+                <div class="game-board">
+                    <div id="tic-tac-toe-board" class="board">
+                        <div class="cell" data-index="0"></div>
+                        <div class="cell" data-index="1"></div>
+                        <div class="cell" data-index="2"></div>
+                        <div class="cell" data-index="3"></div>
+                        <div class="cell" data-index="4"></div>
+                        <div class="cell" data-index="5"></div>
+                        <div class="cell" data-index="6"></div>
+                        <div class="cell" data-index="7"></div>
+                        <div class="cell" data-index="8"></div>
+                    </div>
+                </div>
+
+                <div class="game-controls">
+                    <button id="restart-btn" class="btn btn-warning" style="display: none;">🔄 Play Again</button>
+                    <button id="terminate-btn" class="btn btn-danger">🗑️ End Session</button>
+                    <button onclick="location.href='/tic-tac-toe'" class="btn btn-secondary">← Leave Room</button>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="game-sidebar">
+                <!-- Game Statistics -->
+                <div id="game-statistics" class="statistics-section">
+                    <h3>📊 Game Statistics</h3>
+                    <div id="stats-display"></div>
+                </div>
+
+                <!-- Enhanced Chat Board -->
+                <div class="chat-board">
+                    <div class="chat-header">
+                        <h3>💬 Room Chat</h3>
+                        <button id="clear-chat" class="btn btn-small btn-secondary">Clear</button>
+                    </div>
+                    <div id="chat-messages" class="chat-messages-container"></div>
+                    <div class="chat-input-container">
+                        <input type="text" id="chat-input" placeholder="Type your message..." maxlength="200">
+                        <button onclick="sendMessage()" class="btn btn-small btn-primary">Send</button>
+                    </div>
+                    <div class="chat-info">
+                        <small>💡 Messages are saved for this room session</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // Pass data to JavaScript
+            window.gameData = {
+                roomId: '<%= roomId %>',
+                playerName: '<%= playerName %>'
+            };
+        </script>
+        <script src="/js/tic-tac-toe.js"></script>
+        <% } %>
+    </div>
+</body>
+</html>
