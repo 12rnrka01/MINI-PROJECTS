@@ -14,7 +14,7 @@ body {
 
 /* Header Styles */
 header {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgb(0 0 0 / 27%);
     backdrop-filter: blur(10px);
     border-bottom: 1px solid rgba(255, 255, 255, 0.2);
     padding: 1rem 0;
@@ -399,6 +399,18 @@ header {
     cursor: pointer;
     transition: all 0.3s;
     color: #333;
+    transition: all 0.2s ease;
+}
+.cell:hover {
+    transform: scale(1.05);
+    background: #f0f8ff;
+}
+.cell.placed {
+    animation: placeMove 0.3s ease;
+}
+@keyframes placeMove {
+    0% { transform: scale(1.5); }
+    100% { transform: scale(1); }
 }
 
 .cell.clickable:hover {
@@ -690,38 +702,138 @@ header {
     border: 2px solid #00788a;
 }
 
-/* Footer */
-footer {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    border-top: 1px solid rgba(255, 255, 255, 0.2);
-    padding: 1.5rem 0;
+
+
+.sound-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.sound-btn {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+.volume-slider {
+    width: 80px;
+}
+
+/* Enhanced cell animations */
+.cell {
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.cell.clickable:hover {
+    background: linear-gradient(45deg, #e7f0ff, #f0f8ff);
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.cell.clickable:hover::before {
+    content: attr(data-preview);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2.5rem;
+    opacity: 0.3;
+    pointer-events: none;
+}
+
+/* Move placement animation */
+.cell.just-placed {
+    animation: movePlace 0.4s ease;
+}
+
+@keyframes movePlace {
+    0% { transform: scale(1.3) rotate(-5deg); opacity: 0.7; }
+    50% { transform: scale(1.1) rotate(2deg); }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+.typing-indicator {
+    padding: 0.5rem;
+    font-style: italic;
+    color: #666;
+    font-size: 0.9rem;
+    animation: pulse 1.5s infinite;
+}
+
+.game-timer {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.9rem;
+    background: rgba(255,255,255,0.1);
+    padding: 0.5rem 1rem;
+    border-radius: 10px;
+}
+
+
+.streak-display {
+    background: linear-gradient(45deg, #ff6b35, #f7931e);
+    color: white;
+    padding: 0.3rem 0.5rem;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: bold;
     text-align: center;
+    animation: glow 1s ease-in-out infinite alternate;
+}
+
+@keyframes firework {
+    0% { transform: scale(0) rotate(0deg); opacity: 1; }
+    100% { transform: scale(3) rotate(360deg); opacity: 0; }
+}
+
+
+.quick-reactions {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin: 1rem 0;
+}
+
+.reaction-btn {
+    background: rgba(255,255,255,0.1);
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.reaction-btn:hover {
+    transform: scale(1.2);
+    background: rgba(255,255,255,0.2);
+}
+
+@keyframes floatUp {
+    0% { transform: translateY(0) scale(1); opacity: 1; }
+    100% { transform: translateY(-200px) scale(1.5); opacity: 0; }
+}
+
+.btn-share {
+    background: #28a745;
     color: white;
-    margin-top: auto;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    margin-left: 0.5rem;
+    animation: slideIn 0.5s ease;
 }
 
-.footer-content {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 1rem;
+@keyframes slideIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
 }
 
-.footer-links {
-    margin-top: 0.5rem;
-}
-
-.footer-links a {
-    color: white;
-    text-decoration: none;
-    margin: 0 1rem;
-    opacity: 0.8;
-    transition: opacity 0.3s;
-}
-
-.footer-links a:hover {
-    opacity: 1;
-}
 
 /* Responsive Design */
 @media (max-width: 768px) {
@@ -759,3 +871,4 @@ footer {
         gap: 1rem;
     }
 }
+

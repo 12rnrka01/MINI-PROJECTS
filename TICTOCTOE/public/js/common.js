@@ -33,14 +33,15 @@ function showNotification(message, type = 'info') {
 }
 
 function copyToClipboard(text) {
+    const fullUrl = window.location.href;
     if (navigator.clipboard) {
-        navigator.clipboard.writeText(text).then(() => {
+        navigator.clipboard.writeText(fullUrl).then(() => {
             showNotification('Copied to clipboard!', 'success');
         }).catch(() => {
-            fallbackCopyToClipboard(text);
+            fallbackCopyToClipboard(fullUrl);
         });
     } else {
-        fallbackCopyToClipboard(text);
+        fallbackCopyToClipboard(fullUrl);
     }
 }
 
@@ -68,6 +69,28 @@ function formatTime(date) {
         hour12: false
     }).format(date);
 }
+
+let soundEnabled = true;
+let soundVolume = 0.3;
+
+function playSound(type) {
+    if (!soundEnabled) return;
+    
+    const audio = new Audio(`/sounds/${type}.mp3`);
+    audio.volume = soundVolume;
+    audio.play().catch(e => console.log('Sound failed'));
+}
+
+// Add these controls
+document.getElementById('sound-toggle')?.addEventListener('click', () => {
+    soundEnabled = !soundEnabled;
+    document.getElementById('sound-toggle').textContent = soundEnabled ? '🔊' : '🔇';
+});
+
+document.getElementById('volume-slider')?.addEventListener('input', (e) => {
+    soundVolume = e.target.value / 100;
+});
+
 
 // Initialize common functionality when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {

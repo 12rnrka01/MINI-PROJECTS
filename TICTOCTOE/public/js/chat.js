@@ -1,11 +1,15 @@
 // Reusable Chat Module
 class ChatManager {
+    
     constructor(socket, roomId) {
         this.socket = socket;
         this.roomId = roomId;
         this.playerData = null;
         this.maxMessages = 50;
         this.maxMessageLength = 200;
+
+        this.typingTimeout = null;
+        this.isTyping = false;
         
         this.initializeChatEvents();
         this.setupChatListeners();
@@ -31,6 +35,51 @@ class ChatManager {
         this.socket.on('disconnect', () => {
             this.updateChatStatus('disconnected');
         });
+
+        this.socket.on('player-typing', (data) => {
+            this.playerTyping(data);
+        });
+    }
+
+    playerTyping(data) {
+        const typingIndicator = document.getElementById('typing-indicator');
+        if (data.typing) {
+            if (typingIndicator) {
+                typingIndicator.textContent = `${data.playerName} is typing...`;
+                typingIndicator.style.display = 'block';
+            }
+        } else {
+                if (typingIndicator) {
+                    typingIndicator.style.display = 'none';
+                }
+            }
+    }
+
+    playerTyping(data) {
+        const typingIndicator = document.getElementById('typing-indicator');
+        if (data.typing) {
+            if (typingIndicator) {
+                typingIndicator.textContent = `${data.playerName} is typing...`;
+                typingIndicator.style.display = 'block';
+            }
+        } else {
+            if (typingIndicator) {
+                typingIndicator.style.display = 'none';
+            }
+        }
+    }
+
+    handleTyping() {
+        if (!this.isTyping) {
+            this.isTyping = true;
+            this.socket.emit('typing-start', this.roomId);
+        }
+        
+        clearTimeout(this.typingTimeout);
+        this.typingTimeout = setTimeout(() => {
+            this.isTyping = false;
+            this.socket.emit('typing-stop', this.roomId);
+        }, 1000);
     }
     
     // Set up DOM event listeners
@@ -85,6 +134,8 @@ class ChatManager {
         chatInput.value = '';
         chatInput.focus();
     }
+
+    
     
     // Add message to chat display
     addChatMessage(message) {

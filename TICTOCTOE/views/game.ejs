@@ -6,8 +6,16 @@
 
     
     <div class="game-layout">
+
+
+
+
         <div class="game-section">
 
+        <div class="game-timer">
+            <span>Game Time: <strong id="game-time">00:00</strong></span>
+            <span>Turn: <strong id="turn-time">--</strong></span>
+        </div>
 
             <!-- Player Info Modal -->
 
@@ -33,6 +41,9 @@
                         <div class="stat-item streak">
                             <span class="stat-label">Streak:</span>
                             <span class="stat-value current-streak">0</span>
+                        </div>
+                        <div class="streak-display" id="streak-display-x" style="display: none;">
+                            🔥 <span class="streak-count">0</span> WIN STREAK!
                         </div>
                     </div>
                 </div>
@@ -67,10 +78,22 @@
                             <span class="stat-label">Streak:</span>
                             <span class="stat-value current-streak">0</span>
                         </div>
+                        <div class="streak-display" id="streak-display-o" style="display: none;">
+                            🔥 <span class="streak-count">0</span> WIN STREAK!
+                        </div>
                     </div>
                 </div>
             </div>
             
+            <div class="quick-reactions">
+                <button class="reaction-btn" data-reaction="👍">👍</button>
+                <button class="reaction-btn" data-reaction="😄">😄</button>
+                <button class="reaction-btn" data-reaction="😮">😮</button>
+                <button class="reaction-btn" data-reaction="🔥">🔥</button>
+                <button class="reaction-btn" data-reaction="💯">💯</button>
+            </div>
+
+
             <%- include('games/tic-tac-toe/tic-tac-toe-game-board') %>
             
             <div class="game-controls">

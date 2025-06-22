@@ -362,6 +362,30 @@ io.on('connection', (socket) => {
         
         io.to(roomId).emit('new-message', chatMessage);
     });
+
+    socket.on('typing-start', (roomId) => {
+        const room = gameRooms.get(roomId);
+        if (!room) return;
+        
+        const player = room.players.find(p => p.id === socket.id);
+        if (player) {
+            socket.to(roomId).emit('player-typing', { playerName: player.name, typing: true });
+        }
+    });
+    
+    socket.on('typing-stop', (roomId) => {
+        const room = gameRooms.get(roomId);
+        if (!room) return;
+        
+        const player = room.players.find(p => p.id === socket.id);
+        if (player) {
+            socket.to(roomId).emit('player-typing', { playerName: player.name, typing: false });
+        }
+    });
+    
+    socket.on('send-reaction', (roomId, reactionData) => {
+        io.to(roomId).emit('show-reaction', reactionData);
+    });
     
     socket.on('disconnect', () => {
         console.log('User disconnected:', socket.id);

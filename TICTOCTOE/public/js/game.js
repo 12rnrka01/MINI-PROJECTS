@@ -7,6 +7,11 @@ let sessionStats = { playerX: 0, playerO: 0, ties: 0 };
 let autoPlayEnabled = true;
 let chatManager; // Chat manager instance
 
+let gameStartTime = null;
+let turnStartTime = null;
+let gameTimer = null;
+let turnTimer = null;
+
 document.addEventListener('DOMContentLoaded', function() {
     roomId = window.location.pathname.split('/').pop();
     
@@ -20,6 +25,12 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(() => {
         showNameModal();
     }, 100);
+});
+
+window.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter' && document.activeElement.tagName !== 'INPUT') {
+        document.getElementById('chat-input')?.focus();
+    }
 });
 
 function showNameModal() {
@@ -135,24 +146,29 @@ function initializeSocket() {
     
     socket.on('player-joined', function(data) {
         showNotification(`${data.playerName} joined the game`, 'success');
+        playSound('join');
         updatePlayersCount(data.playersCount);
     });
     
     socket.on('player-left', function(data) {
         showNotification(`${data.playerName} left the game`, 'warning');
+        playSound('leave');
         updatePlayersCount(data.playersCount);
     });
     
     socket.on('game-over', function(data) {
         handleGameOver(data);
+        playSound('failure');
     });
     
     socket.on('game-reset', function() {
         showNotification('New game started', 'info');
+        playSound('notification');
         clearGameBoard();
     });
     
     socket.on('stats-update', function(data) {
+        playSound('notification');
         updatePlayerStats(data.players);
     });
     
@@ -165,20 +181,48 @@ function initializeSocket() {
     
     socket.on('game-stopped', function() {
         autoPlayEnabled = false;
+        playSound('failure');
         showNotification('Game session ended', 'info');
     });
     
     socket.on('disconnect', function() {
+        playSound('failure');
         showNotification('Disconnected from server', 'error');
     });
     
     socket.on('reconnect', function() {
         showNotification('Reconnected to server', 'success');
+        playSound('join');
         // Rejoin the room if we have player data
         if (playerData && playerData.name) {
             socket.emit('join-room', roomId, playerData.name);
         }
     });
+
+    socket.on('show-reaction', function(data) {
+        showFloatingReaction(data.emoji, data.playerName);
+    });
+
+    
+}
+
+function showFloatingReaction(emoji, playerName) {
+    const reaction = document.createElement('div');
+    reaction.innerHTML = `${emoji}<br><small>${playerName}</small>`;
+    reaction.style.cssText = `
+        position: fixed;
+        font-size: 2rem;
+        text-align: center;
+        pointer-events: none;
+        z-index: 1000;
+        left: ${Math.random() * 80 + 10}%;
+        top: 70%;
+        animation: floatUp 3s ease-out forwards;
+        color: white;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    `;
+    document.body.appendChild(reaction);
+    setTimeout(() => reaction.remove(), 3000);
 }
 
 function setupEventListeners() {
@@ -252,17 +296,29 @@ function setupEventListeners() {
         });
     }
     
+    // Reaction buttons
+    const reactionButtons = document.querySelectorAll('.reaction-btn');
+    reactionButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const reaction = button.dataset.reaction;
+            sendReaction(reaction);
+        });
+    });
+    
+
     // NOTE: Chat event listeners are now handled by ChatManager
 }
 
 function makeMove(cellIndex) {
     if (!gameState || gameState.gameStatus !== 'playing') {
         showNotification('Game is not active', 'warning');
+        playSound('wrong');
         return;
     }
     
     if (gameState.board[cellIndex] !== null) {
         showNotification('Cell already taken', 'warning');
+        playSound('wrong');
         return;
     }
     
@@ -270,6 +326,7 @@ function makeMove(cellIndex) {
     const currentPlayer = gameState.players.find(p => p.id === socket.id);
     if (!currentPlayer || currentPlayer.symbol !== gameState.currentPlayer) {
         showNotification('Not your turn', 'warning');
+        playSound('wrong');
         return;
     }
     
@@ -324,12 +381,27 @@ function updateGameBoard() {
             cell.classList.add(value.toLowerCase());
         } else if (gameState.gameStatus === 'playing') {
             cell.classList.add('clickable');
+            
+            // Add preview on hover (moved inside this loop)
+            const currentPlayer = gameState.players.find(p => p.id === socket.id);
+            if (currentPlayer && currentPlayer.symbol === gameState.currentPlayer) {
+                cell.setAttribute('data-preview', gameState.currentPlayer);
+            }
         }
     });
     
     // Highlight winning combination if game is over
     if (gameState.gameStatus === 'finished' && gameState.winner !== 'tie') {
         highlightWinningCells();
+    }
+    
+    // Add animation when move is made
+    if (gameState.lastMove !== undefined) {
+        const lastCell = document.querySelector(`[data-index="${gameState.lastMove}"]`);
+        if (lastCell) {
+            lastCell.classList.add('just-placed');
+            setTimeout(() => lastCell.classList.remove('just-placed'), 400);
+        }
     }
 }
 
@@ -417,6 +489,8 @@ function updateGameStatus() {
             break;
             
         case 'playing':
+            if (!gameStartTime) startGameTimer();
+            startTurnTimer();
             const currentPlayer = gameState.players.find(p => p.symbol === gameState.currentPlayer);
             const isMyTurn = currentPlayer && currentPlayer.id === socket.id;
             
@@ -470,6 +544,25 @@ function updatePlayersCount(count) {
 function handleGameOver(data) {
     // Update session stats
     updateSessionStats(data.winner);
+
+    // Add streak celebration
+    if (data.winner !== 'tie') {
+        const winnerPlayer = gameState.players.find(p => p.name === data.winner);
+        if (winnerPlayer) {
+            const streakElement = document.getElementById(`streak-display-${winnerPlayer.symbol.toLowerCase()}`);
+            const currentStreak = winnerPlayer.stats?.currentStreak || 0;
+            
+            if (currentStreak >= 2) {
+                streakElement.style.display = 'block';
+                streakElement.querySelector('.streak-count').textContent = currentStreak;
+                
+                // Fire celebration
+                if (currentStreak >= 3) {
+                    createFireworks();
+                }
+            }
+        }
+    }
     
     // Update user session stats
     if (userSession && playerData) {
@@ -477,6 +570,10 @@ function handleGameOver(data) {
                           data.winner === 'tie' ? 'tie' : 'loss';
         userSession.updateStats(gameResult);
     }
+
+    setTimeout(() => {
+        showShareButton(data);
+    }, 2000);
     
     setTimeout(() => {
         if (data.winner === 'tie') {
@@ -492,6 +589,43 @@ function handleGameOver(data) {
             }
         }
     }, 500);
+}
+
+function showShareButton(gameData) {
+    const shareBtn = document.createElement('button');
+    shareBtn.innerHTML = '📋 Share Result';
+    shareBtn.className = 'btn-share';
+    shareBtn.onclick = () => shareGameResult(gameData);
+    
+    const gameHeader = document.querySelector('.game-status');
+    if (gameHeader && !document.querySelector('.btn-share')) {
+        gameHeader.appendChild(shareBtn);
+        
+        // Remove after 10 seconds
+        setTimeout(() => shareBtn.remove(), 10000);
+    }
+}
+
+function shareGameResult(data) {
+    const player1 = gameState.players.find(p => p.symbol === 'X');
+    const player2 = gameState.players.find(p => p.symbol === 'O');
+    
+    const result = data.winner === 'tie' ? 
+        `🤝 TIE GAME!` : 
+        `🏆 ${data.winner} WINS!`;
+    
+    const shareText = `
+🎮 Tic-Tac-Toe Game Result:
+${result}
+
+${player1?.name || 'Player 1'} (X) vs ${player2?.name || 'Player 2'} (O)
+Game #${gameState.gameCount || 1}
+
+Play at: ${window.location.origin}
+    `.trim();
+    
+    copyToClipboard(shareText);
+    showNotification('Game result copied! 📋', 'success');
 }
 
 function updatePlayerStats(playersData) {
@@ -588,6 +722,56 @@ function clearGameBoard() {
         }
     });
 }
+
+function startGameTimer() {
+    gameStartTime = Date.now();
+    gameTimer = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - gameStartTime) / 1000);
+        const minutes = Math.floor(elapsed / 60);
+        const seconds = elapsed % 60;
+        document.getElementById('game-time').textContent = 
+            `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }, 1000);
+}
+
+function startTurnTimer() {
+    turnStartTime = Date.now();
+    clearInterval(turnTimer);
+    turnTimer = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - turnStartTime) / 1000);
+        document.getElementById('turn-time').textContent = `${elapsed}s`;
+    }, 1000);
+}
+
+function createFireworks() {
+    for (let i = 0; i < 6; i++) {
+        setTimeout(() => {
+            const firework = document.createElement('div');
+            firework.innerHTML = '🎉';
+            firework.style.cssText = `
+                position: fixed;
+                font-size: 2rem;
+                pointer-events: none;
+                z-index: 1000;
+                left: ${Math.random() * 100}%;
+                top: ${Math.random() * 100}%;
+                animation: firework 2s ease-out forwards;
+            `;
+            document.body.appendChild(firework);
+            setTimeout(() => firework.remove(), 2000);
+        }, i * 200);
+    }
+}
+
+function sendReaction(emoji) {
+    if (socket && socket.connected && playerData) {
+        socket.emit('send-reaction', roomId, {
+            emoji: emoji,
+            playerName: playerData.name
+        });
+    }
+}
+
 
 // Handle page visibility changes
 document.addEventListener('visibilitychange', function() {
