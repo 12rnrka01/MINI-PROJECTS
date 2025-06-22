@@ -10,32 +10,55 @@ let chatManager; // Chat manager instance
 document.addEventListener('DOMContentLoaded', function() {
     roomId = window.location.pathname.split('/').pop();
     
-    // Show name modal
-    showNameModal();
-    
-    // Initialize socket connection
+    // Initialize socket connection first
     initializeSocket();
     
     // Set up event listeners
     setupEventListeners();
+    
+    // Show name modal after socket is ready
+    setTimeout(() => {
+        showNameModal();
+    }, 100);
 });
 
 function showNameModal() {
+    // Check if user already has a saved name
+    if (typeof userSession !== 'undefined' && userSession && userSession.hasUser()) {
+        const savedName = userSession.autoFillGameModal();
+        if (savedName) {
+            // Wait for socket to be ready before auto-joining
+            const waitForSocket = () => {
+                if (socket && socket.connected) {
+                    joinGame();
+                } else {
+                    setTimeout(waitForSocket, 200);
+                }
+            };
+            waitForSocket();
+            return;
+        }
+    }
+    
     const modal = document.getElementById('name-modal');
-    modal.style.display = 'flex';
+    if (modal) {
+        modal.style.display = 'flex';
+    }
     
     const nameInput = document.getElementById('player-name-input');
-    nameInput.focus();
-    
-    // Generate random name suggestion
-    const randomNames = ['Player1', 'Gamer', 'Winner', 'Champion', 'Star', 'Pro'];
-    nameInput.placeholder = randomNames[Math.floor(Math.random() * randomNames.length)];
-    
-    nameInput.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            joinGame();
-        }
-    });
+    if (nameInput) {
+        nameInput.focus();
+        
+        // Generate random name suggestion
+        const randomNames = ['Player1', 'Gamer', 'Winner', 'Champion', 'Star', 'Pro'];
+        nameInput.placeholder = randomNames[Math.floor(Math.random() * randomNames.length)];
+        
+        nameInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                joinGame();
+            }
+        });
+    }
 }
 
 function joinGame() {
@@ -45,6 +68,25 @@ function joinGame() {
     if (!playerName) {
         alert('Please enter your name');
         return;
+    }
+    
+    // Check if socket is connected
+    if (!socket || !socket.connected) {
+        showNotification('Connecting to server...', 'info');
+        // Wait for connection and try again
+        setTimeout(() => {
+            if (socket && socket.connected) {
+                joinGame();
+            } else {
+                showNotification('Could not connect to server. Please refresh the page.', 'error');
+            }
+        }, 1000);
+        return;
+    }
+    
+    // Save user name for future use
+    if (typeof userSession !== 'undefined' && userSession) {
+        userSession.setUser(playerName);
     }
     
     // Hide modal
@@ -64,6 +106,15 @@ function initializeSocket() {
         // Initialize chat manager after socket connection
         if (!chatManager) {
             chatManager = new ChatManager(socket, roomId);
+        }
+        
+        // Auto-join if user has saved name and modal is hidden
+        const modal = document.getElementById('name-modal');
+        if (modal && modal.style.display === 'none' && typeof userSession !== 'undefined' && userSession && userSession.hasUser()) {
+            const userName = userSession.getUserName();
+            if (userName) {
+                socket.emit('join-room', roomId, userName);
+            }
         }
     });
     
@@ -419,6 +470,13 @@ function updatePlayersCount(count) {
 function handleGameOver(data) {
     // Update session stats
     updateSessionStats(data.winner);
+    
+    // Update user session stats
+    if (userSession && playerData) {
+        const gameResult = data.winner === playerData.name ? 'win' : 
+                          data.winner === 'tie' ? 'tie' : 'loss';
+        userSession.updateStats(gameResult);
+    }
     
     setTimeout(() => {
         if (data.winner === 'tie') {
