@@ -203,7 +203,28 @@ function initializeSocket() {
         showFloatingReaction(data.emoji, data.playerName);
     });
 
+    socket.on('room-activity', function(data) {
+        updateRoomActivity(data);
+    });
     
+}
+
+function updateRoomActivity(activity) {
+    const activityDiv = document.getElementById('room-activity');
+    if (activityDiv) {
+        activityDiv.innerHTML = `
+            <div class="activity-item">
+                <span class="activity-icon">${activity.icon}</span>
+                <span class="activity-text">${activity.message}</span>
+                <span class="activity-time">${new Date().toLocaleTimeString()}</span>
+            </div>
+        `;
+        
+        // Fade out after 3 seconds
+        setTimeout(() => {
+            activityDiv.style.opacity = '0.5';
+        }, 3000);
+    }
 }
 
 function showFloatingReaction(emoji, playerName) {

@@ -226,6 +226,11 @@ io.on('connection', (socket) => {
             playerName: socket.playerData?.name,
             playersCount: room.players.length
         });
+
+        io.to(roomId).emit('room-activity', {
+            icon: '👋',
+            message: `${socket.playerData?.name} joined the room`
+        });
         
         // Send updated stats to all players
         io.to(roomId).emit('stats-update', {
@@ -317,6 +322,12 @@ io.on('connection', (socket) => {
                 }
             }, 3000);
         }
+        
+        // Add activity notification
+        io.to(roomId).emit('room-activity', {
+            icon: '🎯',
+            message: `${player.name} placed ${player.symbol}`
+        });
     });
     
     socket.on('reset-game', (roomId) => {
