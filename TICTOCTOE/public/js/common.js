@@ -1,5 +1,5 @@
 // Common JavaScript functions for all pages
-
+debugger
 function createQuickRoom() {
     const roomId = 'room_' + Math.random().toString(36).substr(2, 9);
     window.location.href = `/game/${roomId}`;

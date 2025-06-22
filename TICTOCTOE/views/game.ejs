@@ -1,79 +1,101 @@
 <%- include('partials/header', { title: title }) %>
 
 <div class="game-container">
-    <div class="game-header">
-        <div class="room-info">
-            <h2>Room: <%= roomId %></h2>
-            <button id="copy-room-id" class="btn-copy">Copy Room ID</button>
-        </div>
-        <div class="game-status">
-            <span id="status-text">Waiting for players...</span>
-            <button id="reset-game" class="btn-reset" style="display: none;">New Game</button>
-        </div>
-    </div>
+    
+    <%- include('games/gameheader') %>
+
     
     <div class="game-layout">
         <div class="game-section">
+
+
+            <!-- Player Info Modal -->
+
             <div class="players-info">
                 <div class="player-card" id="player-x">
-                    <span class="player-symbol">X</span>
-                    <span class="player-name">Waiting...</span>
-                    <span class="player-status"></span>
+                    <div class="player-header">
+                        <span class="player-symbol">X</span>
+                        <span class="player-name">Waiting...</span>
+                    </div>
+                    <div class="player-stats" id="stats-x">
+                        <div class="stat-item">
+                            <span class="stat-label">Wins:</span>
+                            <span class="stat-value wins">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Losses:</span>
+                            <span class="stat-value losses">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Ties:</span>
+                            <span class="stat-value ties">0</span>
+                        </div>
+                        <div class="stat-item streak">
+                            <span class="stat-label">Streak:</span>
+                            <span class="stat-value current-streak">0</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="vs">VS</div>
+                
+                <div class="vs-section">
+                    <div class="vs">VS</div>
+                    <div class="session-score">
+                        <span id="session-score">0 - 0</span>
+                        <small>Session Score</small>
+                    </div>
+                </div>
+                
                 <div class="player-card" id="player-o">
-                    <span class="player-symbol">O</span>
-                    <span class="player-name">Waiting...</span>
-                    <span class="player-status"></span>
+                    <div class="player-header">
+                        <span class="player-symbol">O</span>
+                        <span class="player-name">Waiting...</span>
+                    </div>
+                    <div class="player-stats" id="stats-o">
+                        <div class="stat-item">
+                            <span class="stat-label">Wins:</span>
+                            <span class="stat-value wins">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Losses:</span>
+                            <span class="stat-value losses">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Ties:</span>
+                            <span class="stat-value ties">0</span>
+                        </div>
+                        <div class="stat-item streak">
+                            <span class="stat-label">Streak:</span>
+                            <span class="stat-value current-streak">0</span>
+                        </div>
+                    </div>
                 </div>
             </div>
             
-            <div class="tic-tac-toe-board" id="game-board">
-                <div class="cell" data-index="0"></div>
-                <div class="cell" data-index="1"></div>
-                <div class="cell" data-index="2"></div>
-                <div class="cell" data-index="3"></div>
-                <div class="cell" data-index="4"></div>
-                <div class="cell" data-index="5"></div>
-                <div class="cell" data-index="6"></div>
-                <div class="cell" data-index="7"></div>
-                <div class="cell" data-index="8"></div>
-            </div>
+            <%- include('games/tic-tac-toe/tic-tac-toe-game-board') %>
             
             <div class="game-controls">
                 <button id="leave-game" class="btn-secondary">Leave Game</button>
+                <div class="round-history" id="round-history" style="display: none;">
+                    <h4>Recent Games</h4>
+                    <div class="history-list" id="history-list">
+                        <!-- History items will be added here -->
+                    </div>
+                </div>
             </div>
+
+
+
         </div>
         
-        <div class="chat-section">
-            <div class="chat-header">
-                <h3>Game Chat</h3>
-                <span id="players-count">0/2 players</span>
-            </div>
-            
-            <div class="chat-messages" id="chat-messages">
-                <!-- Messages will be added dynamically -->
-            </div>
-            
-            <div class="chat-input-container">
-                <input type="text" id="chat-input" placeholder="Type your message..." maxlength="200">
-                <button id="send-message" class="btn-send">Send</button>
-            </div>
-        </div>
+        <%- include('partials/chat', { totalUsers: 2 }) %>
+
     </div>
 </div>
 
-<!-- Player Name Modal -->
-<div id="name-modal" class="modal">
-    <div class="modal-content">
-        <h3>Enter Your Name</h3>
-        <input type="text" id="player-name-input" placeholder="Your name" maxlength="20">
-        <div class="modal-actions">
-            <button id="join-game-btn" class="btn-primary">Join Game</button>
-        </div>
-    </div>
-</div>
-
+<%- include('partials/playernamemodel') %>
+</main>
 <script src="/js/game.js"></script>
+<script src="/js/common.js"></script>
+<script src="/js/chat.js"></script>
 
-<%- include('partials/footer') %>
+

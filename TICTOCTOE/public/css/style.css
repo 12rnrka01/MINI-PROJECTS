@@ -278,8 +278,60 @@ header {
 
 .player-card.current-turn {
     border-color: #667eea;
-    background: #e7f0ff;
-    box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 0 25px rgba(102, 126, 234, 0.5);
+    animation: yourTurn 0.5s ease-in-out infinite alternate;
+    transform: scale(1.05);
+    position: relative;
+    overflow: hidden;
+}
+
+.player-card.current-turn::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    border-radius: 17px;
+    z-index: -1;
+    animation: borderGlow 3s linear infinite;
+}
+
+
+
+/* Animations */
+@keyframes yourTurn {
+    0% { 
+        box-shadow: 0 0 25px rgba(102, 126, 234, 0.5);
+        transform: scale(0.9);
+    }
+    100% { 
+        box-shadow: 0 0 35px rgba(102, 126, 234, 0.8);
+        transform: scale(1);
+    }
+}
+
+@keyframes borderGlow {
+    0% { 
+        border-color: #667eea;
+        box-shadow: 0 0 25px rgba(102, 126, 234, 0.5);
+    }
+    25% { 
+        border-color: #764ba2;
+        box-shadow: 0 0 30px rgba(118, 75, 162, 0.6);
+    }
+    50% { 
+        border-color: #28a745;
+        box-shadow: 0 0 35px rgba(40, 167, 69, 0.7);
+    }
+    75% { 
+        border-color: #ffc107;
+        box-shadow: 0 0 30px rgba(255, 193, 7, 0.6);
+    }
+    100% { 
+        border-color: #667eea;
+        box-shadow: 0 0 25px rgba(102, 126, 234, 0.5);
+    }
 }
 
 .player-symbol {
@@ -299,6 +351,25 @@ header {
     font-size: 1.5rem;
     font-weight: bold;
     color: #667eea;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.session-score{
+    display: grid;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #667eea;
+    justify-items: center;
+}
+
+#session-score{
+    font-size: xxx-large;
+    font-weight: bold;
+    color: #000000;
 }
 
 /* Tic-Tac-Toe Board */
@@ -394,20 +465,42 @@ header {
     margin-bottom: 1rem;
     max-height: 350px;
     padding-right: 0.5rem;
+    display: flex;
+    flex-direction: column;
 }
 
 .chat-message {
     margin-bottom: 1rem;
     padding: 0.75rem;
     background: #f8f9fa;
-    border-radius: 10px;
+    border-radius: 15px;
     border-left: 4px solid #667eea;
+    max-width: 70%;
+    align-self: flex-start;
+    animation: slideInLeft 0.3s ease-out;
+    border: 1px dashed #667eea;
 }
 
 .chat-message.own-message {
-    background: #e7f0ff;
-    border-left-color: #28a745;
-    margin-left: 1rem;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border-left: 4px solid #28a745;
+    align-self: flex-end;
+    animation: slideInRight 0.3s ease-out;
+}
+
+.chat-message.own-message .message-author {
+    color: #fff;
+    opacity: 0.9;
+}
+
+.chat-message.own-message .message-time {
+    color: #fff;
+    opacity: 0.7;
+}
+
+.chat-message.own-message .message-content {
+    color: #fff;
 }
 
 .message-header {
@@ -429,6 +522,30 @@ header {
 .message-content {
     color: #333;
     line-height: 1.4;
+    word-wrap: break-word;
+}
+
+/* Chat message animations */
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
 }
 
 /* Chat Input */
@@ -550,20 +667,27 @@ header {
 }
 
 .notification-success {
-    background: #28a745;
+    background: #8dffa884;
+    color: #00821e;
+    border: 2px solid #00821e;
 }
 
 .notification-error {
-    background: #dc3545;
+    background: #ff8f9a82;
+    color: #8d000e;
+    border: 2px solid #8d000e;
 }
 
 .notification-warning {
-    background: #ffc107;
-    color: #333;
+    background: #ffe38f84;
+    color: #816100;
+    border: 2px solid #816100;
 }
 
 .notification-info {
-    background: #17a2b8;
+    background: #8ef0ff7f;
+    color: #00788a;
+    border: 2px solid #00788a;
 }
 
 /* Footer */
@@ -613,12 +737,7 @@ footer {
     }
     
     .players-info {
-        flex-direction: column;
         gap: 1rem;
-    }
-    
-    .vs {
-        transform: rotate(90deg);
     }
     
     .game-header {

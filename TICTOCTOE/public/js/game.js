@@ -1,8 +1,11 @@
-// Game-specific JavaScript
+// Game-specific JavaScript (Chat functionality moved to chat.js)
 let socket;
 let roomId;
 let playerData = null;
 let gameState = null;
+let sessionStats = { playerX: 0, playerO: 0, ties: 0 };
+let autoPlayEnabled = true;
+let chatManager; // Chat manager instance
 
 document.addEventListener('DOMContentLoaded', function() {
     roomId = window.location.pathname.split('/').pop();
@@ -57,19 +60,25 @@ function initializeSocket() {
     socket.on('connect', function() {
         console.log('Connected to server');
         showNotification('Connected to game server', 'success');
+        
+        // Initialize chat manager after socket connection
+        if (!chatManager) {
+            chatManager = new ChatManager(socket, roomId);
+        }
     });
     
     socket.on('game-state', function(state) {
         gameState = state;
         updateGameDisplay();
         
-        // Load existing chat messages
-        if (state.messages && state.messages.length > 0) {
-            const chatMessages = document.getElementById('chat-messages');
-            chatMessages.innerHTML = ''; // Clear existing messages
-            state.messages.forEach(message => {
-                addChatMessage(message);
-            });
+        // Update chat manager with player data
+        if (chatManager && playerData) {
+            chatManager.setPlayerData(playerData);
+        }
+        
+        // Load existing chat messages via chat manager
+        if (state.messages && state.messages.length > 0 && chatManager) {
+            chatManager.loadExistingMessages(state.messages);
         }
     });
     
@@ -88,12 +97,24 @@ function initializeSocket() {
     });
     
     socket.on('game-reset', function() {
-        showNotification('Game has been reset', 'info');
+        showNotification('New game started', 'info');
         clearGameBoard();
     });
     
-    socket.on('new-message', function(message) {
-        addChatMessage(message);
+    socket.on('stats-update', function(data) {
+        updatePlayerStats(data.players);
+    });
+    
+    socket.on('auto-next-game', function(data) {
+        if (autoPlayEnabled) {
+            showNotification(data.message, 'info');
+            updateGameCounter(data.gameCount);
+        }
+    });
+    
+    socket.on('game-stopped', function() {
+        autoPlayEnabled = false;
+        showNotification('Game session ended', 'info');
     });
     
     socket.on('disconnect', function() {
@@ -111,48 +132,76 @@ function initializeSocket() {
 
 function setupEventListeners() {
     // Game board clicks
-    document.getElementById('game-board').addEventListener('click', function(e) {
-        if (e.target.classList.contains('cell')) {
-            const cellIndex = parseInt(e.target.dataset.index);
-            makeMove(cellIndex);
-        }
-    });
+    const gameBoard = document.getElementById('game-board');
+    if (gameBoard) {
+        gameBoard.addEventListener('click', function(e) {
+            if (e.target.classList.contains('cell')) {
+                const cellIndex = parseInt(e.target.dataset.index);
+                makeMove(cellIndex);
+            }
+        });
+    }
     
-    // Reset game button
-    document.getElementById('reset-game').addEventListener('click', function() {
-        if (confirm('Are you sure you want to start a new game?')) {
-            socket.emit('reset-game', roomId);
-        }
-    });
+    // Next game button
+    const nextGameBtn = document.getElementById('next-game');
+    if (nextGameBtn) {
+        nextGameBtn.addEventListener('click', function() {
+            socket.emit('next-game', roomId);
+            autoPlayEnabled = true;
+        });
+    }
+    
+    // Stop playing button
+    const stopBtn = document.getElementById('stop-playing');
+    if (stopBtn) {
+        stopBtn.addEventListener('click', function() {
+            if (confirm('Are you sure you want to stop the current session?')) {
+                socket.emit('stop-playing', roomId);
+                autoPlayEnabled = false;
+            }
+        });
+    }
+    
+    // Reset game button (backup)
+    const resetBtn = document.getElementById('reset-game');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function() {
+            if (confirm('Are you sure you want to reset the game?')) {
+                socket.emit('reset-game', roomId);
+            }
+        });
+    }
     
     // Leave game button
-    document.getElementById('leave-game').addEventListener('click', function() {
-        if (confirm('Are you sure you want to leave the game?')) {
-            socket.disconnect();
-            window.location.href = '/';
-        }
-    });
-    
-    // Chat functionality
-    const chatInput = document.getElementById('chat-input');
-    const sendButton = document.getElementById('send-message');
-    
-    sendButton.addEventListener('click', sendChatMessage);
-    
-    chatInput.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            sendChatMessage();
-        }
-    });
+    const leaveBtn = document.getElementById('leave-game');
+    if (leaveBtn) {
+        leaveBtn.addEventListener('click', function() {
+            if (confirm('Are you sure you want to leave the game?')) {
+                // Disconnect chat manager
+                if (chatManager) {
+                    chatManager.disconnect();
+                }
+                socket.disconnect();
+                window.location.href = '/';
+            }
+        });
+    }
     
     // Join game button in modal
-    document.getElementById('join-game-btn').addEventListener('click', joinGame);
+    const joinBtn = document.getElementById('join-game-btn');
+    if (joinBtn) {
+        joinBtn.addEventListener('click', joinGame);
+    }
     
     // Copy room ID button
-    document.getElementById('copy-room-id').addEventListener('click', function() {
-        copyToClipboard(roomId);
-    });
+    const copyBtn = document.getElementById('copy-room-id');
+    if (copyBtn) {
+        copyBtn.addEventListener('click', function() {
+            copyToClipboard(roomId);
+        });
+    }
+    
+    // NOTE: Chat event listeners are now handled by ChatManager
 }
 
 function makeMove(cellIndex) {
@@ -191,8 +240,23 @@ function updateGameDisplay() {
     // Update players count
     updatePlayersCount(gameState.players.length);
     
+    // Update game counter
+    if (gameState.gameCount) {
+        updateGameCounter(gameState.gameCount);
+    }
+    
+    // Update round history
+    if (gameState.roundHistory && gameState.roundHistory.length > 0) {
+        updateRoundHistory(gameState.roundHistory);
+    }
+    
     // Store current player data
     playerData = gameState.players.find(p => p.id === socket.id);
+    
+    // Update chat manager with new player data
+    if (chatManager && playerData) {
+        chatManager.setPlayerData(playerData);
+    }
 }
 
 function updateGameBoard() {
@@ -278,7 +342,19 @@ function updatePlayersDisplay() {
 
 function updateGameStatus() {
     const statusText = document.getElementById('status-text');
-    const resetButton = document.getElementById('reset-game');
+    const nextGameBtn = document.getElementById('next-game');
+    const stopBtn = document.getElementById('stop-playing');
+    const resetBtn = document.getElementById('reset-game');
+    
+    // Hide buttons by default
+    if (nextGameBtn) nextGameBtn.style.display = 'none';
+    if (stopBtn) stopBtn.style.display = 'none';
+    if (resetBtn) resetBtn.style.display = 'none';
+    
+    if (!statusText) {
+        console.error('Status text element not found');
+        return;
+    }
     
     switch (gameState.gameStatus) {
         case 'waiting':
@@ -287,7 +363,6 @@ function updateGameStatus() {
             } else if (gameState.players.length === 1) {
                 statusText.textContent = 'Waiting for second player...';
             }
-            resetButton.style.display = 'none';
             break;
             
         case 'playing':
@@ -299,7 +374,6 @@ function updateGameStatus() {
             } else {
                 statusText.textContent = `${currentPlayer ? currentPlayer.name : 'Player'}'s turn (${gameState.currentPlayer})`;
             }
-            resetButton.style.display = 'none';
             break;
             
         case 'finished':
@@ -315,16 +389,37 @@ function updateGameStatus() {
                     statusText.textContent = `${gameState.winner} wins! 👑`;
                 }
             }
-            resetButton.style.display = 'inline-block';
+            
+            // Show game control buttons
+            if (autoPlayEnabled) {
+                statusText.textContent += ' Next game starting in 3 seconds...';
+            } else {
+                if (nextGameBtn) nextGameBtn.style.display = 'inline-block';
+            }
+            if (stopBtn) stopBtn.style.display = 'inline-block';
+            break;
+            
+        case 'stopped':
+            statusText.textContent = 'Game session ended. Thanks for playing!';
+            if (nextGameBtn) {
+                nextGameBtn.style.display = 'inline-block';
+                nextGameBtn.textContent = 'Start New Session';
+            }
             break;
     }
 }
 
 function updatePlayersCount(count) {
-    document.getElementById('players-count').textContent = `${count}/2 players`;
+    const playersCountElement = document.getElementById('players-count');
+    if (playersCountElement) {
+        playersCountElement.textContent = `${count}/2 players`;
+    }
 }
 
 function handleGameOver(data) {
+    // Update session stats
+    updateSessionStats(data.winner);
+    
     setTimeout(() => {
         if (data.winner === 'tie') {
             showNotification("Game over - It's a tie! 🤝", 'info');
@@ -341,78 +436,99 @@ function handleGameOver(data) {
     }, 500);
 }
 
+function updatePlayerStats(playersData) {
+    playersData.forEach(player => {
+        const statsElement = document.getElementById(`stats-${player.symbol.toLowerCase()}`);
+        if (statsElement && player.stats) {
+            statsElement.querySelector('.wins').textContent = player.stats.wins;
+            statsElement.querySelector('.losses').textContent = player.stats.losses;
+            statsElement.querySelector('.ties').textContent = player.stats.ties;
+            statsElement.querySelector('.current-streak').textContent = player.stats.currentStreak;
+            
+            // Highlight streak if > 0
+            const streakElement = statsElement.querySelector('.streak');
+            if (player.stats.currentStreak > 0) {
+                streakElement.classList.add('active-streak');
+            } else {
+                streakElement.classList.remove('active-streak');
+            }
+        }
+    });
+}
+
+function updateSessionStats(winner) {
+    if (winner === 'tie') {
+        sessionStats.ties++;
+    } else {
+        const winnerPlayer = gameState.players.find(p => p.name === winner);
+        if (winnerPlayer) {
+            if (winnerPlayer.symbol === 'X') {
+                sessionStats.playerX++;
+            } else {
+                sessionStats.playerO++;
+            }
+        }
+    }
+    
+    // Update session score display
+    const sessionScore = document.getElementById('session-score');
+    sessionScore.textContent = `${sessionStats.playerX} - ${sessionStats.playerO}`;
+    
+    if (sessionStats.ties > 0) {
+        sessionScore.textContent += ` (${sessionStats.ties} ties)`;
+    }
+}
+
+function updateGameCounter(gameCount) {
+    const currentGameElement = document.getElementById('current-game');
+    if (currentGameElement) {
+        currentGameElement.textContent = gameCount || 1;
+    }
+}
+
+function updateRoundHistory(roundHistory) {
+    const historyContainer = document.getElementById('round-history');
+    const historyList = document.getElementById('history-list');
+    
+    if (roundHistory.length === 0) {
+        historyContainer.style.display = 'none';
+        return;
+    }
+    
+    historyContainer.style.display = 'block';
+    historyList.innerHTML = '';
+    
+    // Show last 5 games
+    const recentGames = roundHistory.slice(-5).reverse();
+    
+    recentGames.forEach(game => {
+        const historyItem = document.createElement('div');
+        historyItem.className = 'history-item';
+        
+        const winnerText = game.winner === 'tie' ? 'Tie' : `${game.winner} won`;
+        const gameTime = new Date(game.timestamp).toLocaleTimeString();
+        
+        historyItem.innerHTML = `
+            <div class="history-game">
+                <span class="game-number">Game ${game.gameNumber}</span>
+                <span class="game-result">${winnerText}</span>
+                <span class="game-time">${gameTime}</span>
+            </div>
+        `;
+        
+        historyList.appendChild(historyItem);
+    });
+}
+
 function clearGameBoard() {
     const cells = document.querySelectorAll('.cell');
     cells.forEach(cell => {
         cell.textContent = '';
         cell.classList.remove('x', 'o', 'winning-cell');
-        cell.classList.add('clickable');
+        if (gameState && gameState.gameStatus === 'playing') {
+            cell.classList.add('clickable');
+        }
     });
-}
-
-function sendChatMessage() {
-    const chatInput = document.getElementById('chat-input');
-    const message = chatInput.value.trim();
-    
-    if (!message) {
-        return;
-    }
-    
-    if (message.length > 200) {
-        showNotification('Message too long (max 200 characters)', 'warning');
-        return;
-    }
-    
-    socket.emit('send-message', roomId, message);
-    chatInput.value = '';
-    chatInput.focus();
-}
-
-function addChatMessage(message) {
-    const chatMessages = document.getElementById('chat-messages');
-    
-    const messageElement = document.createElement('div');
-    messageElement.className = 'chat-message';
-    
-    // Check if this message is from current player
-    const isOwnMessage = playerData && message.playerName === playerData.name;
-    if (isOwnMessage) {
-        messageElement.classList.add('own-message');
-    }
-    
-    messageElement.innerHTML = `
-        <div class="message-header">
-            <span class="message-author">${escapeHtml(message.playerName)}</span>
-            <span class="message-time">${message.timestamp}</span>
-        </div>
-        <div class="message-content">${escapeHtml(message.message)}</div>
-    `;
-    
-    chatMessages.appendChild(messageElement);
-    
-    // Scroll to bottom
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-    
-    // Remove old messages if too many (keep last 50)
-    const messages = chatMessages.querySelectorAll('.chat-message');
-    if (messages.length > 50) {
-        messages[0].remove();
-    }
-}
-
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-// Utility functions for better UX
-function addTypingIndicator() {
-    // Could add typing indicator functionality here
-}
-
-function removeTypingIndicator() {
-    // Could remove typing indicator functionality here
 }
 
 // Handle page visibility changes
@@ -429,6 +545,9 @@ document.addEventListener('visibilitychange', function() {
 
 // Handle page unload
 window.addEventListener('beforeunload', function() {
+    if (chatManager) {
+        chatManager.disconnect();
+    }
     if (socket) {
         socket.disconnect();
     }
