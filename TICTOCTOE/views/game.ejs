@@ -1,0 +1,79 @@
+<%- include('partials/header', { title: title }) %>
+
+<div class="game-container">
+    <div class="game-header">
+        <div class="room-info">
+            <h2>Room: <%= roomId %></h2>
+            <button id="copy-room-id" class="btn-copy">Copy Room ID</button>
+        </div>
+        <div class="game-status">
+            <span id="status-text">Waiting for players...</span>
+            <button id="reset-game" class="btn-reset" style="display: none;">New Game</button>
+        </div>
+    </div>
+    
+    <div class="game-layout">
+        <div class="game-section">
+            <div class="players-info">
+                <div class="player-card" id="player-x">
+                    <span class="player-symbol">X</span>
+                    <span class="player-name">Waiting...</span>
+                    <span class="player-status"></span>
+                </div>
+                <div class="vs">VS</div>
+                <div class="player-card" id="player-o">
+                    <span class="player-symbol">O</span>
+                    <span class="player-name">Waiting...</span>
+                    <span class="player-status"></span>
+                </div>
+            </div>
+            
+            <div class="tic-tac-toe-board" id="game-board">
+                <div class="cell" data-index="0"></div>
+                <div class="cell" data-index="1"></div>
+                <div class="cell" data-index="2"></div>
+                <div class="cell" data-index="3"></div>
+                <div class="cell" data-index="4"></div>
+                <div class="cell" data-index="5"></div>
+                <div class="cell" data-index="6"></div>
+                <div class="cell" data-index="7"></div>
+                <div class="cell" data-index="8"></div>
+            </div>
+            
+            <div class="game-controls">
+                <button id="leave-game" class="btn-secondary">Leave Game</button>
+            </div>
+        </div>
+        
+        <div class="chat-section">
+            <div class="chat-header">
+                <h3>Game Chat</h3>
+                <span id="players-count">0/2 players</span>
+            </div>
+            
+            <div class="chat-messages" id="chat-messages">
+                <!-- Messages will be added dynamically -->
+            </div>
+            
+            <div class="chat-input-container">
+                <input type="text" id="chat-input" placeholder="Type your message..." maxlength="200">
+                <button id="send-message" class="btn-send">Send</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Player Name Modal -->
+<div id="name-modal" class="modal">
+    <div class="modal-content">
+        <h3>Enter Your Name</h3>
+        <input type="text" id="player-name-input" placeholder="Your name" maxlength="20">
+        <div class="modal-actions">
+            <button id="join-game-btn" class="btn-primary">Join Game</button>
+        </div>
+    </div>
+</div>
+
+<script src="/js/game.js"></script>
+
+<%- include('partials/footer') %>
