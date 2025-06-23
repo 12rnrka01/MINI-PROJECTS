@@ -10,9 +10,20 @@ class ChatManager {
 
         this.typingTimeout = null;
         this.isTyping = false;
+
+        this.isMinimized = false;
+        this.isDragging = false;
+        this.dragOffset = { x: 0, y: 0 };
+
+        this.chatHistory = [];
+        this.searchIndex = 0;
+        this.searchResults = [];
+        this.currentSearchIndex = 0;
+        this.setupChatSearch();
         
         this.initializeChatEvents();
         this.setupChatListeners();
+        this.setupChatControls();
     }
     
     // Initialize socket events for chat
@@ -39,6 +50,57 @@ class ChatManager {
         this.socket.on('player-typing', (data) => {
             this.playerTyping(data);
         });
+
+        this.socket.on('message-reaction-update', (data) => {
+            this.updateMessageReaction(data);
+        });
+    }
+
+    updateMessageReaction(data) {
+        const messageElement = document.querySelector(`[data-message-id="${data.messageId}"]`);
+        if (!messageElement) return;
+        
+        let reactionsSummary = messageElement.querySelector('.reactions-summary');
+        if (!reactionsSummary) {
+            reactionsSummary = document.createElement('div');
+            reactionsSummary.className = 'reactions-summary';
+            messageElement.appendChild(reactionsSummary);
+        }
+        
+        // Check if this emoji reaction already exists
+        let existingReaction = reactionsSummary.querySelector(`[data-emoji="${data.emoji}"]`);
+        
+        if (existingReaction) {
+            // Increase count
+            let countElement = existingReaction.querySelector('.count');
+            let currentCount = parseInt(countElement.textContent) || 1;
+            countElement.textContent = currentCount + 1;
+        } else {
+            // Create new reaction
+            const reactionSpan = document.createElement('span');
+            reactionSpan.className = 'reaction-count';
+            reactionSpan.dataset.emoji = data.emoji;
+            reactionSpan.title = `Reacted by: ${data.users.join(', ')}`;
+            reactionSpan.innerHTML = `${data.emoji} <span class="count">1</span>`;
+            reactionsSummary.appendChild(reactionSpan);
+        }
+    }
+
+    setupChatSearch() {
+        // Add search functionality
+        const searchBtn = document.getElementById('chat-search-btn');
+        if (searchBtn) {
+            searchBtn.addEventListener('click', () => this.toggleSearch());
+        }
+        
+        const searchInput = document.getElementById('chat-search-input');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => this.searchMessages(e.target.value));
+            searchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') this.nextSearchResult();
+                if (e.key === 'Escape') this.closeSearch();
+            });
+        }
     }
 
     playerTyping(data) {
@@ -135,7 +197,31 @@ class ChatManager {
         chatInput.focus();
     }
 
+    addMessageReactions(messageElement, messageData) {
+        const reactionsContainer = document.createElement('div');
+        reactionsContainer.className = 'message-reactions';
+        
+        const quickReactions = ['👍', '❤️', '😄', '😮'];
+        quickReactions.forEach(emoji => {
+            const reactionBtn = document.createElement('button');
+            reactionBtn.className = 'reaction-btn';
+            reactionBtn.textContent = emoji;
+            reactionBtn.onclick = () => this.reactToMessage(messageData.id, emoji);
+            reactionsContainer.appendChild(reactionBtn);
+        });
+        
+        messageElement.appendChild(reactionsContainer);
+    }
     
+    reactToMessage(messageId, emoji) {
+        if (this.socket && this.socket.connected) {
+            this.socket.emit('message-reaction', this.roomId, {
+                messageId: messageId,
+                emoji: emoji,
+                playerName: this.playerData?.name
+            });
+        }
+    }
     
     // Add message to chat display
     addChatMessage(message) {
@@ -148,8 +234,8 @@ class ChatManager {
         
         const messageElement = document.createElement('div');
         messageElement.className = 'chat-message';
+        messageElement.dataset.messageId = message.id;
         
-        // Check if this message is from current player
         const isOwnMessage = this.playerData && message.playerName === this.playerData.name;
         if (isOwnMessage) {
             messageElement.classList.add('own-message');
@@ -158,20 +244,197 @@ class ChatManager {
         messageElement.innerHTML = `
             <div class="message-header">
                 <span class="message-author">${this.escapeHtml(message.playerName)}</span>
-                <span class="message-time">${message.timestamp}</span>
+                <span class="message-time" style="display: none;">${message.timestamp}</span>
+                <div class="message-actions">
+                    <button class="msg-action-btn reply-btn" onclick="chatManager.replyToMessage('${message.id}', '${message.playerName}')">↩️</button>
+                    <button class="msg-action-btn copy-btn" onclick="chatManager.copyMessage('${message.message}')">📋</button>
+                </div>
             </div>
             <div class="message-content">${this.escapeHtml(message.message)}</div>
         `;
         
+        // Add reaction buttons on hover
+        this.addMessageReactions(messageElement, message);
+        
         chatMessages.appendChild(messageElement);
-        
-        // Scroll to bottom
         chatMessages.scrollTop = chatMessages.scrollHeight;
-        
-        // Remove old messages if too many
         this.cleanupOldMessages();
-        
         console.log('Chat message added:', message);
+
+        this.chatHistory.push({
+            ...message,
+            element: messageElement
+        });
+        
+        // Keep last 100 messages in history
+        if (this.chatHistory.length > 100) {
+            this.chatHistory.shift();
+        }
+    }
+
+    toggleSearch() {
+        const searchContainer = document.getElementById('chat-search-container');
+        if (!searchContainer) {
+            this.createSearchContainer();
+        } else {
+            searchContainer.style.display = searchContainer.style.display === 'none' ? 'flex' : 'none';
+            if (searchContainer.style.display === 'flex') {
+                document.getElementById('chat-search-input').focus();
+            }
+        }
+    }
+    
+    createSearchContainer() {
+        const searchContainer = document.createElement('div');
+        searchContainer.id = 'chat-search-container';
+        searchContainer.className = 'chat-search-container';
+        searchContainer.innerHTML = `
+            <input type="text" id="chat-search-input" placeholder="Search messages..." maxlength="50">
+            <button id="search-prev" onclick="chatManager.prevSearchResult()">↑</button>
+            <button id="search-next" onclick="chatManager.nextSearchResult()">↓</button>
+            <span id="search-results">0/0</span>
+            <button id="search-close" onclick="chatManager.closeSearch()">✕</button>
+        `;
+        
+        const chatHeader = document.querySelector('.chat-header');
+        chatHeader.insertAdjacentElement('afterend', searchContainer);
+    }
+
+    searchMessages(query) {
+        if (!query || query.length < 2) {
+            this.clearSearchHighlights();
+            return;
+        }
+        
+        this.clearSearchHighlights();
+        this.searchResults = [];
+        
+        // Search through chat history
+        this.chatHistory.forEach((msg, index) => {
+            if (msg.message.toLowerCase().includes(query.toLowerCase()) || 
+                msg.playerName.toLowerCase().includes(query.toLowerCase())) {
+                this.searchResults.push({
+                    index: index,
+                    element: msg.element,
+                    message: msg
+                });
+            }
+        });
+        
+        this.highlightSearchResults(query);
+        this.updateSearchCounter();
+        
+        if (this.searchResults.length > 0) {
+            this.currentSearchIndex = 0;
+            this.scrollToSearchResult(0);
+        }
+    }
+
+    highlightSearchResults(query) {
+        this.searchResults.forEach(result => {
+            const messageContent = result.element.querySelector('.message-content');
+            const authorName = result.element.querySelector('.message-author');
+            
+            if (messageContent) {
+                messageContent.innerHTML = this.highlightText(result.message.message, query);
+            }
+            if (authorName && result.message.playerName.toLowerCase().includes(query.toLowerCase())) {
+                authorName.innerHTML = this.highlightText(result.message.playerName, query);
+            }
+            
+            result.element.classList.add('search-highlighted');
+        });
+    }
+    
+    highlightText(text, query) {
+        const regex = new RegExp(`(${query})`, 'gi');
+        return this.escapeHtml(text).replace(regex, '<mark>$1</mark>');
+    }
+    
+    clearSearchHighlights() {
+        document.querySelectorAll('.chat-message').forEach(msg => {
+            msg.classList.remove('search-highlighted', 'search-current');
+            
+            const content = msg.querySelector('.message-content');
+            const author = msg.querySelector('.message-author');
+            
+            if (content) content.innerHTML = this.escapeHtml(content.textContent);
+            if (author) author.innerHTML = this.escapeHtml(author.textContent);
+        });
+    }
+
+    nextSearchResult() {
+        if (!this.searchResults || this.searchResults.length === 0) return;
+        
+        this.currentSearchIndex = (this.currentSearchIndex + 1) % this.searchResults.length;
+        this.scrollToSearchResult(this.currentSearchIndex);
+    }
+    
+    prevSearchResult() {
+        if (!this.searchResults || this.searchResults.length === 0) return;
+        
+        this.currentSearchIndex = this.currentSearchIndex === 0 ? 
+            this.searchResults.length - 1 : this.currentSearchIndex - 1;
+        this.scrollToSearchResult(this.currentSearchIndex);
+    }
+    
+    scrollToSearchResult(index) {
+        if (!this.searchResults || this.searchResults.length === 0) return;
+        // Remove current highlighting
+        document.querySelectorAll('.search-current').forEach(el => {
+            el.classList.remove('search-current');
+        });
+        
+        // Highlight current result
+        const result = this.searchResults[index];
+        result.element.classList.add('search-current');
+        result.element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        this.updateSearchCounter();
+    }
+    
+    updateSearchCounter() {
+        const counter = document.getElementById('search-results');
+        if (counter) {
+            const total = this.searchResults ? this.searchResults.length : 0;
+            counter.textContent = total > 0 ? 
+                `${this.currentSearchIndex + 1}/${total}` : '0/0';
+        }
+    }
+
+    closeSearch() {
+        const searchContainer = document.getElementById('chat-search-container');
+        if (searchContainer) {
+            searchContainer.style.display = 'none';
+        }
+        this.clearSearchHighlights();
+    }
+
+    replyToMessage(messageId, authorName) {
+        const chatInput = document.getElementById('chat-input');
+        if (chatInput) {
+            chatInput.value = `@${authorName} `;
+            chatInput.focus();
+
+        }
+    }
+    
+    cancelReply() {
+        const indicator = document.getElementById('reply-indicator');
+        if (indicator) indicator.style.display = 'none';
+        
+        const chatInput = document.getElementById('chat-input');
+        if (chatInput) {
+            chatInput.value = chatInput.value.replace(/@\w+\s/, '');
+            chatInput.focus();
+        }
+    }
+
+    copyMessage(messageText) {
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(messageText);
+            this.showChatNotification('Message copied!', 'success');
+        }
     }
     
     // Load existing chat messages (when joining room)
@@ -282,6 +545,105 @@ class ChatManager {
         this.clearChat();
         
         console.log('Chat disconnected');
+    }
+
+    setupChatControls() {
+        // Minimize/maximize functionality
+        const minimizeBtn = document.getElementById('chat-minimize');
+        if (minimizeBtn) {
+            minimizeBtn.addEventListener('click', () => this.toggleMinimize());
+        }
+        
+        // Drag functionality
+        const chatHeader = document.querySelector('.chat-header');
+        if (chatHeader) {
+            chatHeader.addEventListener('mousedown', (e) => this.startDrag(e));
+        }
+        
+        // Emoji picker
+        const emojiBtn = document.getElementById('emoji-btn');
+        if (emojiBtn) {
+            emojiBtn.addEventListener('click', () => this.toggleEmojiPicker());
+        }
+        
+        document.addEventListener('mousemove', (e) => this.drag(e));
+        document.addEventListener('mouseup', () => this.stopDrag());
+    }
+    
+    toggleMinimize() {
+        this.isMinimized = !this.isMinimized;
+        const chatSection = document.querySelector('.chat-section');
+        const minimizeBtn = document.getElementById('chat-minimize');
+        
+        if (this.isMinimized) {
+            chatSection.classList.add('minimized');
+            minimizeBtn.textContent = '🔼';
+        } else {
+            chatSection.classList.remove('minimized');
+            minimizeBtn.textContent = '🔽';
+        }
+    }
+    
+    startDrag(e) {
+        this.isDragging = true;
+        const chatSection = document.querySelector('.chat-section');
+        const rect = chatSection.getBoundingClientRect();
+        this.dragOffset.x = e.clientX - rect.left;
+        this.dragOffset.y = e.clientY - rect.top;
+        chatSection.style.position = 'fixed';
+        chatSection.style.zIndex = '1000';
+    }
+    
+    drag(e) {
+        if (!this.isDragging) return;
+        
+        const chatSection = document.querySelector('.chat-section');
+        chatSection.style.left = `${e.clientX - this.dragOffset.x}px`;
+        chatSection.style.top = `${e.clientY - this.dragOffset.y}px`;
+    }
+    
+    stopDrag() {
+        this.isDragging = false;
+    }
+    
+    toggleEmojiPicker() {
+        let picker = document.getElementById('emoji-picker');
+        
+        if (!picker) {
+            picker = this.createEmojiPicker();
+            const emojiBtn = document.querySelector('#emoji-btn');
+            emojiBtn.parentNode.insertBefore(picker, emojiBtn);
+        }
+        
+        picker.style.display = picker.style.display === 'none' ? 'block' : 'none';
+    }
+    
+    createEmojiPicker() {
+        const emojis = ['😀','😃','😄','😁','😊','😍','🤔','😮','😢','😡','👍','👎','❤️','🔥','💯','🎉','🎮','🏆'];
+        
+        const picker = document.createElement('div');
+        picker.id = 'emoji-picker';
+        picker.className = 'emoji-picker';
+        picker.innerHTML = `
+            <div class="emoji-grid">
+                ${emojis.map(emoji => `<button class="emoji-btn" data-emoji="${emoji}">${emoji}</button>`).join('')}
+            </div>
+        `;
+        
+        // Add emoji click handler
+        picker.addEventListener('click', (e) => {
+            if (e.target.classList.contains('emoji-btn')) {
+                const emoji = e.target.dataset.emoji;
+                const chatInput = document.getElementById('chat-input');
+                if (chatInput) {
+                    chatInput.value += emoji;
+                    chatInput.focus();
+                }
+                picker.style.display = 'none';
+            }
+        });
+        
+        return picker;
     }
 }
 

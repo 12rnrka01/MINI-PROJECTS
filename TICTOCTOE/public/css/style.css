@@ -17,15 +17,13 @@ header {
     background: rgb(0 0 0 / 27%);
     backdrop-filter: blur(10px);
     border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-    padding: 1rem 0;
+    padding: 0.5rem 0;
     position: sticky;
     top: 0;
     z-index: 100;
 }
 
 .nav-container {
-    max-width: 1200px;
-    margin: 0 auto;
     padding: 0 1rem;
     display: flex;
     justify-content: space-between;
@@ -41,24 +39,6 @@ header {
 .logo a {
     color: white;
     text-decoration: none;
-}
-
-.nav-links {
-    display: flex;
-    list-style: none;
-    gap: 1rem;
-}
-
-.nav-links a {
-    color: white;
-    text-decoration: none;
-    padding: 0.5rem 1rem;
-    border-radius: 20px;
-    transition: background 0.3s;
-}
-
-.nav-links a:hover {
-    background: rgba(255, 255, 255, 0.2);
 }
 
 /* Container Styles */
@@ -212,9 +192,17 @@ header {
     align-items: center;
     margin-bottom: 2rem;
     background: rgba(255, 255, 255, 0.1);
-    padding: 1rem 2rem;
+    padding: 0.5rem 1rem;
     border-radius: 15px;
     backdrop-filter: blur(10px);
+}
+
+.game-header .room-info{
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
 }
 
 .room-info h2 {
@@ -440,12 +428,11 @@ header {
 .chat-section {
     background: rgba(255, 255, 255, 0.95);
     border-radius: 20px;
-    padding: 1.5rem;
     display: flex;
     flex-direction: column;
     height: fit-content;
     max-height: 600px;
-    min-height: 500px;
+    min-height: 60px;
 }
 
 .chat-header {
@@ -453,8 +440,8 @@ header {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 1rem;
-    padding-bottom: 1rem;
-    border-bottom: 2px solid #e9ecef;
+    padding-bottom: 0.2rem;
+    border-bottom: 2px solid #cccccc;
 }
 
 .chat-header h3 {
@@ -479,6 +466,7 @@ header {
     padding-right: 0.5rem;
     display: flex;
     flex-direction: column;
+    overflow-x: hidden;
 }
 
 .chat-message {
@@ -537,6 +525,90 @@ header {
     word-wrap: break-word;
 }
 
+.chat-header {
+    cursor: move;
+    user-select: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.chat-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.chat-control-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 3px;
+    transition: background 0.2s;
+}
+
+.chat-control-btn:hover {
+    background: rgba(0,0,0,0.1);
+}
+
+.chat-section.minimized {
+    height: 60px !important;
+    overflow: hidden;
+}
+
+.chat-section.minimized .chat-messages,
+.chat-section.minimized .chat-input-container {
+    display: none;
+}
+
+.emoji-toggle {
+    background: #f8f9fa;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 0.5rem;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.emoji-picker {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 0.5rem;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    z-index: 1001;
+}
+
+.emoji-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 0.25rem;
+}
+
+.emoji-btn {
+    background: none;
+    border: none;
+    padding: 0.5rem;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 1.2rem;
+}
+
+.emoji-btn:hover {
+    background: #f0f0f0;
+}
+
+.chat-input-container {
+    position: relative;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
 /* Chat message animations */
 @keyframes slideInLeft {
     from {
@@ -560,6 +632,89 @@ header {
     }
 }
 
+.reaction-count {
+    background: rgba(102, 126, 234, 0.1);
+    border: 1px solid rgba(102, 126, 234, 0.3);
+    padding: 0.25rem 0.5rem;
+    border-radius: 15px;
+    font-size: 0.85rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.reaction-count:hover {
+    background: rgba(102, 126, 234, 0.2);
+    transform: scale(1.05);
+}
+
+.reaction-count .count {
+    font-weight: bold;
+    color: #667eea;
+    min-width: 12px;
+    text-align: center;
+}
+
+.reactions-summary {
+    margin-top: 0.5rem;
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.chat-search-container {
+    display: none;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background: #f8f9fa;
+    border-bottom: 1px solid #ddd;
+}
+
+#chat-search-input {
+    flex: 1;
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 0.9rem;
+}
+
+#search-prev, #search-next, #search-close {
+    background: #667eea;
+    color: white;
+    border: none;
+    padding: 0.5rem;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    min-width: 25px;
+}
+
+#search-results {
+    font-size: 0.8rem;
+    color: #666;
+    min-width: 40px;
+    text-align: center;
+}
+
+.search-highlighted {
+    background: rgba(255, 255, 0, 0.1);
+    border-left: 3px solid #ffc107;
+}
+
+.search-current {
+    background: rgba(255, 255, 0, 0.3);
+    border-left: 3px solid #ff6b35;
+}
+
+mark {
+    background: #ffeb3b;
+    padding: 0.1rem;
+    border-radius: 2px;
+}
+
 /* Chat Input */
 .chat-input-container {
     display: flex;
@@ -568,9 +723,9 @@ header {
 
 #chat-input {
     flex: 1;
-    padding: 0.75rem;
+    padding: 0.25rem;
     border: 2px solid #e9ecef;
-    border-radius: 8px;
+    border-radius: 5px;
     font-size: 1rem;
     resize: none;
 }
@@ -596,7 +751,7 @@ header {
 
 .modal-content {
     background: white;
-    padding: 2rem;
+    padding: 1rem;
     border-radius: 15px;
     text-align: center;
     max-width: 400px;
@@ -615,7 +770,7 @@ header {
     padding: 0.75rem;
     margin-bottom: 1.5rem;
     border: 2px solid #e9ecef;
-    border-radius: 8px;
+    border-radius: 5px;
     font-size: 1rem;
     text-align: center;
 }
@@ -641,8 +796,8 @@ header {
 }
 
 .feature-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    display: flex;
+    flex-wrap: wrap;
     gap: 1.5rem;
 }
 
@@ -652,6 +807,8 @@ header {
     border-radius: 15px;
     text-align: center;
     color: white;
+    width: 20rem;
+
 }
 
 .feature-item h4 {
@@ -796,6 +953,19 @@ header {
     margin: 1rem 0;
 }
 
+.message-reactions{
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+}
+.message-reactions .reaction-btn {
+    width: 25px;
+    height: 25px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
 .reaction-btn {
     background: rgba(255,255,255,0.1);
     border: none;
@@ -856,22 +1026,46 @@ header {
     font-size: 0.8rem;
 }
 
+.stat-value.losses{
+    color: #dc3545;
+}
+
+.stat-value.wins{
+    color: #28a745;
+}
+
+.stat-value.draws{
+    color: #ffc107;
+}
+
+.stat-value.current-streak{
+    color: #ff9900;
+}
 
 /* Responsive Design */
 @media (max-width: 768px) {
+    .vs-section .vs{
+        display: none;
+    }
+    .vs-section{
+        flex-direction: column;
+        order: 1;
+    }
     .game-layout {
         grid-template-columns: 1fr;
         gap: 1rem;
     }
     
     .chat-section {
-        order: -1;
         max-height: 300px;
-        min-height: 250px;
+        min-height: 60px;
+        pointer-events: none;
     }
     
     .players-info {
         gap: 1rem;
+        flex-direction: column;
+        margin-bottom: 1rem;
     }
     
     .game-header {
@@ -892,5 +1086,14 @@ header {
         flex-direction: column;
         gap: 1rem;
     }
+
+    #chat-minimize{
+        display: none;
+    }
 }
 
+
+/* Temporery */
+#chat-search-btn{
+    display: none;
+}

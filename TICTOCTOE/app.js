@@ -397,6 +397,43 @@ io.on('connection', (socket) => {
     socket.on('send-reaction', (roomId, reactionData) => {
         io.to(roomId).emit('show-reaction', reactionData);
     });
+
+    socket.on('message-reaction', (roomId, reactionData) => {
+        const room = gameRooms.get(roomId);
+        if (!room) return;
+        
+        // Initialize reactions tracking if not exists
+        if (!room.messageReactions) {
+            room.messageReactions = new Map();
+        }
+        
+        const messageKey = `${reactionData.messageId}_${reactionData.emoji}`;
+        
+        if (!room.messageReactions.has(messageKey)) {
+            room.messageReactions.set(messageKey, {
+                messageId: reactionData.messageId,
+                emoji: reactionData.emoji,
+                count: 0,
+                users: []
+            });
+        }
+        
+        const reaction = room.messageReactions.get(messageKey);
+        
+        // Check if user already reacted with this emoji
+        if (!reaction.users.includes(reactionData.playerName)) {
+            reaction.count++;
+            reaction.users.push(reactionData.playerName);
+            
+            // Send updated reaction to all players
+            io.to(roomId).emit('message-reaction-update', {
+                messageId: reactionData.messageId,
+                emoji: reactionData.emoji,
+                count: reaction.count,
+                users: reaction.users
+            });
+        }
+    });
     
     socket.on('disconnect', () => {
         console.log('User disconnected:', socket.id);
