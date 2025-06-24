@@ -1,0 +1,22 @@
+<div class="chat-section">
+    <div class="chat-header">
+        <h3>Game Chat</h3>
+        <div class="chat-controls">
+            <button id="chat-search-btn" class="chat-control-btn" title="Search messages">🔍</button>
+            <span id="players-count"> 0/ <%= totalUsers %> players</span>
+            <button id="chat-minimize" class="chat-control-btn">🔽</button>
+        </div>
+    </div>
+    
+    <div class="chat-messages" id="chat-messages">
+    </div>
+    
+    <div id="typing-indicator" class="typing-indicator" style="display: none;">
+        Someone is typing...
+    </div>
+    <div class="chat-input-container">
+        <input type="text" id="chat-input" placeholder="Type your message..." maxlength="200" />
+        <button id="emoji-btn" class="emoji-toggle">😀</button>
+        <button id="send-message" class="btn-send">Send</button>
+    </div>
+</div>

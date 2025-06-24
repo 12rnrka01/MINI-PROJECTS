@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <script src="/socket.io/socket.io.js"></script>
+    
+    <link rel="stylesheet" href="/css/style.css">
+  
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="nav-container">
+                <h1 class="logo"><a href="/">We1 Hangout</a></h1>
+                <ul class="nav-links">
+                <div class="sound-controls">
+                    <button id="sound-toggle" class="sound-btn">🔊</button>
+                    <input type="range" id="volume-slider" min="0" max="100" value="30" class="volume-slider">
+                </div>
+                    <li><a href="/">Home</a></li>
+                    <li><a href="#" onclick="createQuickRoom()">Quick Game</a></li>
+                    <% if (typeof gameType !== 'undefined') { %>
+                        <li><span class="current-game">Playing: <%= gameType.toUpperCase() %></span></li>
+                    <% } %>
+                    <!-- User section will be added here by UserSessionManager -->
+                </ul>
+            </div>
+        </nav>
+    </header>
+    
+    <main>
+    
+    <!-- Load user session manager first -->
+    <script src="/js/user-session.js"></script>
