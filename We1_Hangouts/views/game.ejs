@@ -6,85 +6,147 @@
 
     <div id="room-activity" class="room-activity"></div>
 
-    
     <div class="game-layout">
-
-
-
-
         <div class="game-section">
 
-        <div class="game-timer">
-            <span>Game Time: <strong id="game-time">00:00</strong></span>
-            <span>Turn: <strong id="turn-time">--</strong></span>
-        </div>
+            <div class="game-timer">
+                <span>Game Time: <strong id="game-time">00:00</strong></span>
+                <span>Turn: <strong id="turn-time">--</strong></span>
+            </div>
 
-            <!-- Player Info Modal -->
-
+            <!-- Player Info Section -->
             <div class="players-info">
-                <div class="player-card" id="player-x">
-                    <div class="player-header">
-                        <span class="player-name">Waiting...</span>
-                        <span class="player-symbol">X</span>
-                    </div>
-                    <div class="player-stats" id="stats-x">
-                        <div class="stat-item">
-                            <span class="stat-label">Wins:</span>
-                            <span class="stat-value wins">0</span>
+                <% if (gameType === 'connect4') { %>
+                    <!-- Connect4 Player Cards -->
+                    <div class="player-card" id="player-red">
+                        <div class="player-header">
+                            <span class="player-name">Waiting...</span>
+                            <span class="player-symbol connect4-red">🔴</span>
                         </div>
-                        <div class="stat-item">
-                            <span class="stat-label">Losses:</span>
-                            <span class="stat-value losses">0</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">Ties:</span>
-                            <span class="stat-value ties">0</span>
-                        </div>
-                        <div class="stat-item streak">
-                            <span class="stat-label">Streak:</span>
-                            <span class="stat-value current-streak">0</span>
-                        </div>
-                        <div class="streak-display" id="streak-display-x" style="display: none;">
-                            🔥 <span class="streak-count">0</span> WIN STREAK!
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="vs-section">
-                    <div class="vs">VS</div>
-                    <div class="session-score">
-                        <span id="session-score">0 - 0</span>
-                        <small>Session Score</small>
-                    </div>
-                </div>
-                
-                <div class="player-card" id="player-o">
-                    <div class="player-header">
-                        <span class="player-name">Waiting...</span>
-                        <span class="player-symbol">O</span>
-                    </div>
-                    <div class="player-stats" id="stats-o">
-                        <div class="stat-item">
-                            <span class="stat-label">Wins:</span>
-                            <span class="stat-value wins">0</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">Losses:</span>
-                            <span class="stat-value losses">0</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">Ties:</span>
-                            <span class="stat-value ties">0</span>
-                        </div>
-                        <div class="stat-item streak">
-                            <span class="stat-label">Streak:</span>
-                            <span class="stat-value current-streak">0</span>
-                        </div>
-                        <div class="streak-display" id="streak-display-o" style="display: none;">
-                            🔥 <span class="streak-count">0</span> WIN STREAK!
+                        <div class="player-stats" id="stats-red">
+                            <div class="stat-item">
+                                <span class="stat-label">Wins:</span>
+                                <span class="stat-value wins">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Losses:</span>
+                                <span class="stat-value losses">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Ties:</span>
+                                <span class="stat-value ties">0</span>
+                            </div>
+                            <div class="stat-item streak">
+                                <span class="stat-label">Streak:</span>
+                                <span class="stat-value current-streak">0</span>
+                            </div>
+                            <div class="streak-display" id="streak-display-red" style="display: none;">
+                                🔥 <span class="streak-count">0</span> WIN STREAK!
+                            </div>
                         </div>
                     </div>
-                </div>
+                    
+                    <div class="vs-section">
+                        <div class="vs">VS</div>
+                        <div class="session-score">
+                            <span id="session-score">0 - 0</span>
+                            <small>Session Score</small>
+                        </div>
+                    </div>
+                    
+                    <div class="player-card" id="player-yellow">
+                        <div class="player-header">
+                            <span class="player-name">Waiting...</span>
+                            <span class="player-symbol connect4-yellow">🟡</span>
+                        </div>
+                        <div class="player-stats" id="stats-yellow">
+                            <div class="stat-item">
+                                <span class="stat-label">Wins:</span>
+                                <span class="stat-value wins">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Losses:</span>
+                                <span class="stat-value losses">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Ties:</span>
+                                <span class="stat-value ties">0</span>
+                            </div>
+                            <div class="stat-item streak">
+                                <span class="stat-label">Streak:</span>
+                                <span class="stat-value current-streak">0</span>
+                            </div>
+                            <div class="streak-display" id="streak-display-yellow" style="display: none;">
+                                🔥 <span class="streak-count">0</span> WIN STREAK!
+                            </div>
+                        </div>
+                    </div>
+                <% } else { %>
+                    <!-- Tic-Tac-Toe Player Cards -->
+                    <div class="player-card" id="player-x">
+                        <div class="player-header">
+                            <span class="player-name">Waiting...</span>
+                            <span class="player-symbol">X</span>
+                        </div>
+                        <div class="player-stats" id="stats-x">
+                            <div class="stat-item">
+                                <span class="stat-label">Wins:</span>
+                                <span class="stat-value wins">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Losses:</span>
+                                <span class="stat-value losses">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Ties:</span>
+                                <span class="stat-value ties">0</span>
+                            </div>
+                            <div class="stat-item streak">
+                                <span class="stat-label">Streak:</span>
+                                <span class="stat-value current-streak">0</span>
+                            </div>
+                            <div class="streak-display" id="streak-display-x" style="display: none;">
+                                🔥 <span class="streak-count">0</span> WIN STREAK!
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="vs-section">
+                        <div class="vs">VS</div>
+                        <div class="session-score">
+                            <span id="session-score">0 - 0</span>
+                            <small>Session Score</small>
+                        </div>
+                    </div>
+                    
+                    <div class="player-card" id="player-o">
+                        <div class="player-header">
+                            <span class="player-name">Waiting...</span>
+                            <span class="player-symbol">O</span>
+                        </div>
+                        <div class="player-stats" id="stats-o">
+                            <div class="stat-item">
+                                <span class="stat-label">Wins:</span>
+                                <span class="stat-value wins">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Losses:</span>
+                                <span class="stat-value losses">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Ties:</span>
+                                <span class="stat-value ties">0</span>
+                            </div>
+                            <div class="stat-item streak">
+                                <span class="stat-label">Streak:</span>
+                                <span class="stat-value current-streak">0</span>
+                            </div>
+                            <div class="streak-display" id="streak-display-o" style="display: none;">
+                                🔥 <span class="streak-count">0</span> WIN STREAK!
+                            </div>
+                        </div>
+                    </div>
+                <% } %>
             </div>
             
             <div class="quick-reactions">
@@ -95,8 +157,12 @@
                 <button class="reaction-btn" data-reaction="💯">💯</button>
             </div>
 
-
-            <%- include('games/tic-tac-toe/tic-tac-toe-game-board') %>
+            <!-- Game Board - Conditional based on game type -->
+            <% if (gameType === 'connect4') { %>
+                <%- include('games/connect4/connect4-game-board') %>
+            <% } else { %>
+                <%- include('games/tic-tac-toe/tic-tac-toe-game-board') %>
+            <% } %>
             
             <div class="game-controls">
                 <button id="leave-game" class="btn-secondary">Leave Game</button>
@@ -108,8 +174,6 @@
                 </div>
             </div>
 
-
-
         </div>
         
         <%- include('partials/chat', { totalUsers: 2 }) %>
@@ -119,8 +183,18 @@
 
 <%- include('partials/playernamemodel') %>
 </main>
-<script src="/js/game.js"></script>
-<script src="/js/common.js"></script>
-<script src="/js/chat.js"></script>
+
+<!-- Load scripts based on game type -->
+<script>
+    // Set global game type for scripts
+    window.currentGameType = '<%= gameType %>';
+    window.currentRoomId = '<%= roomId %>';
+</script>
 
 
+<% if (gameType === 'connect4') { %>
+    <script src="/js/connect4-game.js"></script>
+    <link rel="stylesheet" href="/css/game_connect4.css">
+<% } else { %>
+    <script src="/js/tictactoe-game.js"></script>
+<% } %></link>

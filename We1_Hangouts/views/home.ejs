@@ -1,0 +1,90 @@
+
+<>
+
+    <%- include('partials/header', { title: title }) %>
+    <div class="container">
+        <div class="hero-section">
+            <h1>Welcome to We1 Hangout</h1>
+            <p>Play games with friends in real-time with chat functionality</p>
+        </div>
+
+            <div class="game-selection">
+                <div class="game-card active">
+                    <h3>Tic-Tac-Toe</h3>
+                    <p>Classic 3x3 grid game with chat</p>
+                    <div class="game-actions">
+                        <button class="quick-play-btn btn-primary" data-game="tictactoe">Quick Play</button>
+                        <input type="text" class="room-input room-code-input" placeholder="Enter room code">
+                            <button class="join-room-btn btn-secondary" data-game="tictactoe">Join Room</button>
+                        </div>
+                </div>
+
+                <div class="game-card active">
+                    <h3>Connect Four</h3>
+                    <p>Classic 2D grid game with chat</p>
+                    <div class="game-actions">
+                        <button class="quick-play-btn btn-primary" data-game="connect4">Quick Play</button>
+                        <input type="text" class="room-input room-code-input" placeholder="Enter room code">
+                            <button class="join-room-btn btn-secondary" data-game="connect4">Join Room</button>
+                        </div>
+                </div>
+
+                <div class="game-card disabled">
+                    <h3>Rock Paper Scissors</h3>
+                    <p>Coming Soon...</p>
+                    <div class="game-actions">
+                        <button class="btn-disabled" disabled>Coming Soon</button>
+                    </div>
+                </div>
+
+                <div class="game-card disabled">
+                    <h3>Coin Flip</h3>
+                    <p>Coming Soon...</p>
+                    <div class="game-actions">
+                        <button class="btn-disabled" disabled>Coming Soon</button>
+                    </div>
+                </div>
+
+                <div class="game-card disabled">
+                    <h3>Dots and Boxes</h3>
+                    <p>Coming Soon...</p>
+                    <div class="game-actions">
+                        <button class="btn-disabled" disabled>Coming Soon</button>
+                    </div>
+                </div>
+
+                <div class="game-card disabled">
+                    <h3>Chess</h3>
+                    <p>Coming Soon...</p>
+                    <div class="game-actions">
+                        <button class="btn-disabled" disabled>Coming Soon</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="features">
+                <h2>Features</h2>
+                <div class="feature-grid">
+                    <div class="feature-item">
+                        <h4>Real-time Gameplay</h4>
+                        <p>Play with friends instantly using WebSocket technology</p>
+                    </div>
+                    <div class="feature-item">
+                        <h4>Live Chat</h4>
+                        <p>Chat with your opponent during gameplay</p>
+                    </div>
+                    <div class="feature-item">
+                        <h4>Room System</h4>
+                        <p>Create private rooms or join existing ones</p>
+                    </div>
+                    <div class="feature-item">
+                        <h4>No Registration</h4>
+                        <p>Jump straight into games without signing up</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script src="/js/home.js"></script>
+    </div>
+
+</>

@@ -1,26 +1,51 @@
+// modules/chat/socketManager.js - FIXED VERSION
 class ChatSocketManager {
     constructor() {
         this.io = null;
+        this.roomProviders = {
+            getRoom: null,
+            getAllRooms: null
+        };
     }
 
-    init(io) {
+    initialize(io) {
         this.io = io;
         console.log('💬 Chat Socket Manager initialized');
     }
 
-    handleConnection(socket, io, gameRooms) {
+    handleConnection(socket, io, roomProviders) {
+        // Store room providers for getting room data
+        this.roomProviders = roomProviders;
+
         socket.on('send-message', (roomId, message) => {
-            console.log('💬 Chat message received:', message);
-            const room = gameRooms.get(roomId);
-            if (!room) return;
+            console.log('💬 Chat message received:', { roomId, message, socketId: socket.id });
             
+            // Get room from game managers
+            const room = this.roomProviders.getRoom(roomId);
+            if (!room) {
+                console.log('Room not found:', roomId);
+                return;
+            }
+            
+            // Find player in room
             const player = room.players.find(p => p.id === socket.id);
+            if (!player) {
+                console.log('Player not found in room:', socket.id);
+                return;
+            }
+            
             const chatMessage = {
-                id: Date.now(),
-                playerName: player?.name || 'Anonymous',
-                message: message,
-                timestamp: new Date().toLocaleTimeString()
+                id: Date.now() + Math.random(), // Ensure unique ID
+                playerName: player.name,
+                message: message.trim(),
+                timestamp: new Date().toLocaleTimeString(),
+                gameType: room.gameType || 'unknown'
             };
+            
+            // Initialize messages array if not exists
+            if (!room.messages) {
+                room.messages = [];
+            }
             
             room.messages.push(chatMessage);
             
@@ -29,36 +54,38 @@ class ChatSocketManager {
                 room.messages = room.messages.slice(-50);
             }
             
+            console.log(`💬 Broadcasting message to room ${roomId}:`, chatMessage);
             io.to(roomId).emit('new-message', chatMessage);
-            console.log(`Chat message from ${chatMessage.playerName}: ${message}`);
         });
 
         socket.on('typing-start', (roomId) => {
-            const room = gameRooms.get(roomId);
+            const room = this.roomProviders.getRoom(roomId);
             if (!room) return;
             
             const player = room.players.find(p => p.id === socket.id);
             if (player) {
-                socket.to(roomId).emit('player-typing', { playerName: player.name, typing: true });
+                socket.to(roomId).emit('player-typing', { 
+                    playerName: player.name, 
+                    typing: true 
+                });
             }
         });
         
         socket.on('typing-stop', (roomId) => {
-            const room = gameRooms.get(roomId);
+            const room = this.roomProviders.getRoom(roomId);
             if (!room) return;
             
             const player = room.players.find(p => p.id === socket.id);
             if (player) {
-                socket.to(roomId).emit('player-typing', { playerName: player.name, typing: false });
+                socket.to(roomId).emit('player-typing', { 
+                    playerName: player.name, 
+                    typing: false 
+                });
             }
         });
 
-        socket.on('send-reaction', (roomId, reactionData) => {
-            io.to(roomId).emit('show-reaction', reactionData);
-        });
-    
         socket.on('message-reaction', (roomId, reactionData) => {
-            const room = gameRooms.get(roomId);
+            const room = this.roomProviders.getRoom(roomId);
             if (!room) return;
             
             // Initialize reactions tracking if not exists
@@ -93,13 +120,10 @@ class ChatSocketManager {
                 });
             }
         });
-
-        
     }
 
-
-    handleDisconnection(socket, io, gameRooms) {
-        console.log('User disconnected:', socket.id);
+    handleDisconnection(socket) {
+        console.log('💬 Chat user disconnected:', socket.id);
     }
 }
 

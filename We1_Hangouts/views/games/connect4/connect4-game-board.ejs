@@ -1,0 +1,98 @@
+<!-- views/games/connect4/connect4-game-board.ejs -->
+<div class="connect4-game-container">
+    <div class="connect4-board-wrapper">
+        <!-- Column indicators for dropping discs -->
+        <div class="connect4-columns" id="connect4-columns">
+            <div class="connect4-column-btn" data-column="0">
+                <span class="column-number">1</span>
+                <div class="drop-indicator" id="drop-indicator-0"></div>
+            </div>
+            <div class="connect4-column-btn" data-column="1">
+                <span class="column-number">2</span>
+                <div class="drop-indicator" id="drop-indicator-1"></div>
+            </div>
+            <div class="connect4-column-btn" data-column="2">
+                <span class="column-number">3</span>
+                <div class="drop-indicator" id="drop-indicator-2"></div>
+            </div>
+            <div class="connect4-column-btn" data-column="3">
+                <span class="column-number">4</span>
+                <div class="drop-indicator" id="drop-indicator-3"></div>
+            </div>
+            <div class="connect4-column-btn" data-column="4">
+                <span class="column-number">5</span>
+                <div class="drop-indicator" id="drop-indicator-4"></div>
+            </div>
+            <div class="connect4-column-btn" data-column="5">
+                <span class="column-number">6</span>
+                <div class="drop-indicator" id="drop-indicator-5"></div>
+            </div>
+            <div class="connect4-column-btn" data-column="6">
+                <span class="column-number">7</span>
+                <div class="drop-indicator" id="drop-indicator-6"></div>
+            </div>
+        </div>
+
+        <!-- Game board -->
+        <div class="connect4-board" id="connect4-board">
+            <!-- Row 0 -->
+            <div class="connect4-cell" data-index="0" data-row="0" data-col="0"></div>
+            <div class="connect4-cell" data-index="1" data-row="0" data-col="1"></div>
+            <div class="connect4-cell" data-index="2" data-row="0" data-col="2"></div>
+            <div class="connect4-cell" data-index="3" data-row="0" data-col="3"></div>
+            <div class="connect4-cell" data-index="4" data-row="0" data-col="4"></div>
+            <div class="connect4-cell" data-index="5" data-row="0" data-col="5"></div>
+            <div class="connect4-cell" data-index="6" data-row="0" data-col="6"></div>
+            
+            <!-- Row 1 -->
+            <div class="connect4-cell" data-index="7" data-row="1" data-col="0"></div>
+            <div class="connect4-cell" data-index="8" data-row="1" data-col="1"></div>
+            <div class="connect4-cell" data-index="9" data-row="1" data-col="2"></div>
+            <div class="connect4-cell" data-index="10" data-row="1" data-col="3"></div>
+            <div class="connect4-cell" data-index="11" data-row="1" data-col="4"></div>
+            <div class="connect4-cell" data-index="12" data-row="1" data-col="5"></div>
+            <div class="connect4-cell" data-index="13" data-row="1" data-col="6"></div>
+            
+            <!-- Row 2 -->
+            <div class="connect4-cell" data-index="14" data-row="2" data-col="0"></div>
+            <div class="connect4-cell" data-index="15" data-row="2" data-col="1"></div>
+            <div class="connect4-cell" data-index="16" data-row="2" data-col="2"></div>
+            <div class="connect4-cell" data-index="17" data-row="2" data-col="3"></div>
+            <div class="connect4-cell" data-index="18" data-row="2" data-col="4"></div>
+            <div class="connect4-cell" data-index="19" data-row="2" data-col="5"></div>
+            <div class="connect4-cell" data-index="20" data-row="2" data-col="6"></div>
+            
+            <!-- Row 3 -->
+            <div class="connect4-cell" data-index="21" data-row="3" data-col="0"></div>
+            <div class="connect4-cell" data-index="22" data-row="3" data-col="1"></div>
+            <div class="connect4-cell" data-index="23" data-row="3" data-col="2"></div>
+            <div class="connect4-cell" data-index="24" data-row="3" data-col="3"></div>
+            <div class="connect4-cell" data-index="25" data-row="3" data-col="4"></div>
+            <div class="connect4-cell" data-index="26" data-row="3" data-col="5"></div>
+            <div class="connect4-cell" data-index="27" data-row="3" data-col="6"></div>
+            
+            <!-- Row 4 -->
+            <div class="connect4-cell" data-index="28" data-row="4" data-col="0"></div>
+            <div class="connect4-cell" data-index="29" data-row="4" data-col="1"></div>
+            <div class="connect4-cell" data-index="30" data-row="4" data-col="2"></div>
+            <div class="connect4-cell" data-index="31" data-row="4" data-col="3"></div>
+            <div class="connect4-cell" data-index="32" data-row="4" data-col="4"></div>
+            <div class="connect4-cell" data-index="33" data-row="4" data-col="5"></div>
+            <div class="connect4-cell" data-index="34" data-row="4" data-col="6"></div>
+            
+            <!-- Row 5 -->
+            <div class="connect4-cell" data-index="35" data-row="5" data-col="0"></div>
+            <div class="connect4-cell" data-index="36" data-row="5" data-col="1"></div>
+            <div class="connect4-cell" data-index="37" data-row="5" data-col="2"></div>
+            <div class="connect4-cell" data-index="38" data-row="5" data-col="3"></div>
+            <div class="connect4-cell" data-index="39" data-row="5" data-col="4"></div>
+            <div class="connect4-cell" data-index="40" data-row="5" data-col="5"></div>
+            <div class="connect4-cell" data-index="41" data-row="5" data-col="6"></div>
+        </div>
+    </div>
+    
+    <!-- Game status display -->
+    <div class="connect4-status" id="connect4-status">
+        <span id="connect4-current-player">Red Player's Turn</span>
+    </div>
+</div>

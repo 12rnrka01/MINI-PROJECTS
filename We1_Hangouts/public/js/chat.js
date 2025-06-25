@@ -1,6 +1,5 @@
-// Reusable Chat Module
+// public/js/chat.js - FIXED VERSION
 class ChatManager {
-    
     constructor(socket, roomId) {
         this.socket = socket;
         this.roomId = roomId;
@@ -19,11 +18,13 @@ class ChatManager {
         this.searchIndex = 0;
         this.searchResults = [];
         this.currentSearchIndex = 0;
-        this.setupChatSearch();
+        
+        console.log('ChatManager initialized with:', { socket: !!socket, roomId });
         
         this.initializeChatEvents();
         this.setupChatListeners();
         this.setupChatControls();
+        this.setupChatSearch();
     }
     
     // Initialize socket events for chat
@@ -33,27 +34,48 @@ class ChatManager {
             return;
         }
         
+        console.log('Setting up chat socket events...');
+        
         // Listen for new messages from server
         this.socket.on('new-message', (message) => {
+            console.log('Chat: Received new message:', message);
             this.addChatMessage(message);
         });
         
         // Handle connection status for chat
         this.socket.on('connect', () => {
+            console.log('Chat: Socket connected');
             this.updateChatStatus('connected');
         });
         
         this.socket.on('disconnect', () => {
+            console.log('Chat: Socket disconnected');
             this.updateChatStatus('disconnected');
         });
 
         this.socket.on('player-typing', (data) => {
-            this.playerTyping(data);
+            console.log('Chat: Player typing:', data);
+            this.showTypingIndicator(data);
         });
 
         this.socket.on('message-reaction-update', (data) => {
+            console.log('Chat: Message reaction update:', data);
             this.updateMessageReaction(data);
         });
+        
+        console.log('Chat socket events setup complete');
+    }
+
+    showTypingIndicator(data) {
+        const typingIndicator = document.getElementById('typing-indicator');
+        if (!typingIndicator) return;
+        
+        if (data.typing) {
+            typingIndicator.textContent = `${data.playerName} is typing...`;
+            typingIndicator.style.display = 'block';
+        } else {
+            typingIndicator.style.display = 'none';
+        }
     }
 
     updateMessageReaction(data) {
@@ -86,51 +108,6 @@ class ChatManager {
         }
     }
 
-    setupChatSearch() {
-        // Add search functionality
-        const searchBtn = document.getElementById('chat-search-btn');
-        if (searchBtn) {
-            searchBtn.addEventListener('click', () => this.toggleSearch());
-        }
-        
-        const searchInput = document.getElementById('chat-search-input');
-        if (searchInput) {
-            searchInput.addEventListener('input', (e) => this.searchMessages(e.target.value));
-            searchInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') this.nextSearchResult();
-                if (e.key === 'Escape') this.closeSearch();
-            });
-        }
-    }
-
-    playerTyping(data) {
-        const typingIndicator = document.getElementById('typing-indicator');
-        if (data.typing) {
-            if (typingIndicator) {
-                typingIndicator.textContent = `${data.playerName} is typing...`;
-                typingIndicator.style.display = 'block';
-            }
-        } else {
-                if (typingIndicator) {
-                    typingIndicator.style.display = 'none';
-                }
-            }
-    }
-
-    playerTyping(data) {
-        const typingIndicator = document.getElementById('typing-indicator');
-        if (data.typing) {
-            if (typingIndicator) {
-                typingIndicator.textContent = `${data.playerName} is typing...`;
-                typingIndicator.style.display = 'block';
-            }
-        } else {
-            if (typingIndicator) {
-                typingIndicator.style.display = 'none';
-            }
-        }
-    }
-
     handleTyping() {
         if (!this.isTyping) {
             this.isTyping = true;
@@ -150,31 +127,39 @@ class ChatManager {
         const chatInput = document.getElementById('chat-input');
         const sendButton = document.getElementById('send-message');
         
+        console.log('Setting up chat listeners...', { chatInput: !!chatInput, sendButton: !!sendButton });
+        
         if (sendButton) {
-            sendButton.addEventListener('click', () => this.sendChatMessage());
+            sendButton.addEventListener('click', () => {
+                console.log('Send button clicked');
+                this.sendChatMessage();
+            });
         }
         
         if (chatInput) {
             chatInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
+                    console.log('Enter key pressed in chat input');
                     this.sendChatMessage();
                 }
             });
             
-            // Optional: Show typing indicator
+            // Show typing indicator
             chatInput.addEventListener('input', () => {
                 this.handleTyping();
             });
         }
+        
+        console.log('Chat listeners setup complete');
     }
     
     // Send chat message
     sendChatMessage() {
         const chatInput = document.getElementById('chat-input');
-        const message = chatInput.value.trim();
+        const message = chatInput ? chatInput.value.trim() : '';
         
-        console.log('Sending chat message:', message);
+        console.log('Attempting to send chat message:', { message, socket: !!this.socket, roomId: this.roomId });
         
         if (!message) {
             console.log('Empty message, not sending');
@@ -188,13 +173,17 @@ class ChatManager {
         
         if (!this.socket || !this.socket.connected) {
             this.showChatNotification('Not connected to server', 'error');
+            console.error('Socket not connected:', { socket: !!this.socket, connected: this.socket?.connected });
             return;
         }
         
-        console.log('Emitting send-message event');
+        console.log('Emitting send-message event:', { roomId: this.roomId, message });
         this.socket.emit('send-message', this.roomId, message);
-        chatInput.value = '';
-        chatInput.focus();
+        
+        if (chatInput) {
+            chatInput.value = '';
+            chatInput.focus();
+        }
     }
 
     addMessageReactions(messageElement, messageData) {
@@ -232,6 +221,8 @@ class ChatManager {
             return;
         }
         
+        console.log('Adding chat message to UI:', message);
+        
         const messageElement = document.createElement('div');
         messageElement.className = 'chat-message';
         messageElement.dataset.messageId = message.id;
@@ -244,10 +235,10 @@ class ChatManager {
         messageElement.innerHTML = `
             <div class="message-header">
                 <span class="message-author">${this.escapeHtml(message.playerName)}</span>
-                <span class="message-time" style="display: none;">${message.timestamp}</span>
+                <span class="message-time">${message.timestamp}</span>
                 <div class="message-actions">
-                    <button class="msg-action-btn reply-btn" onclick="chatManager.replyToMessage('${message.id}', '${message.playerName}')">↩️</button>
-                    <button class="msg-action-btn copy-btn" onclick="chatManager.copyMessage('${message.message}')">📋</button>
+                    <button class="msg-action-btn reply-btn" onclick="window.chatManager.replyToMessage('${message.id}', '${message.playerName}')">↩️</button>
+                    <button class="msg-action-btn copy-btn" onclick="window.chatManager.copyMessage('${this.escapeHtml(message.message)}')">📋</button>
                 </div>
             </div>
             <div class="message-content">${this.escapeHtml(message.message)}</div>
@@ -259,7 +250,6 @@ class ChatManager {
         chatMessages.appendChild(messageElement);
         chatMessages.scrollTop = chatMessages.scrollHeight;
         this.cleanupOldMessages();
-        console.log('Chat message added:', message);
 
         this.chatHistory.push({
             ...message,
@@ -269,6 +259,25 @@ class ChatManager {
         // Keep last 100 messages in history
         if (this.chatHistory.length > 100) {
             this.chatHistory.shift();
+        }
+        
+        console.log('Chat message added to UI successfully');
+    }
+
+    setupChatSearch() {
+        // Add search functionality
+        const searchBtn = document.getElementById('chat-search-btn');
+        if (searchBtn) {
+            searchBtn.addEventListener('click', () => this.toggleSearch());
+        }
+        
+        const searchInput = document.getElementById('chat-search-input');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => this.searchMessages(e.target.value));
+            searchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') this.nextSearchResult();
+                if (e.key === 'Escape') this.closeSearch();
+            });
         }
     }
 
@@ -290,14 +299,16 @@ class ChatManager {
         searchContainer.className = 'chat-search-container';
         searchContainer.innerHTML = `
             <input type="text" id="chat-search-input" placeholder="Search messages..." maxlength="50">
-            <button id="search-prev" onclick="chatManager.prevSearchResult()">↑</button>
-            <button id="search-next" onclick="chatManager.nextSearchResult()">↓</button>
+            <button id="search-prev" onclick="window.chatManager.prevSearchResult()">↑</button>
+            <button id="search-next" onclick="window.chatManager.nextSearchResult()">↓</button>
             <span id="search-results">0/0</span>
-            <button id="search-close" onclick="chatManager.closeSearch()">✕</button>
+            <button id="search-close" onclick="window.chatManager.closeSearch()">✕</button>
         `;
         
         const chatHeader = document.querySelector('.chat-header');
-        chatHeader.insertAdjacentElement('afterend', searchContainer);
+        if (chatHeader) {
+            chatHeader.insertAdjacentElement('afterend', searchContainer);
+        }
     }
 
     searchMessages(query) {
@@ -415,18 +426,6 @@ class ChatManager {
         if (chatInput) {
             chatInput.value = `@${authorName} `;
             chatInput.focus();
-
-        }
-    }
-    
-    cancelReply() {
-        const indicator = document.getElementById('reply-indicator');
-        if (indicator) indicator.style.display = 'none';
-        
-        const chatInput = document.getElementById('chat-input');
-        if (chatInput) {
-            chatInput.value = chatInput.value.replace(/@\w+\s/, '');
-            chatInput.focus();
         }
     }
 
@@ -468,15 +467,7 @@ class ChatManager {
     // Update player data (call this when player data changes)
     setPlayerData(playerData) {
         this.playerData = playerData;
-    }
-    
-    // Handle typing indicator (optional feature)
-    handleTyping() {
-        // You can implement typing indicators here
-        // For example, emit 'typing' event to server
-        if (this.socket && this.socket.connected) {
-            // this.socket.emit('typing', this.roomId);
-        }
+        console.log('Chat: Player data updated:', playerData);
     }
     
     // Update chat connection status
@@ -539,6 +530,8 @@ class ChatManager {
         // Remove socket listeners specific to chat
         if (this.socket) {
             this.socket.off('new-message');
+            this.socket.off('player-typing');
+            this.socket.off('message-reaction-update');
         }
         
         // Clear any intervals or timeouts
@@ -612,7 +605,9 @@ class ChatManager {
         if (!picker) {
             picker = this.createEmojiPicker();
             const emojiBtn = document.querySelector('#emoji-btn');
-            emojiBtn.parentNode.insertBefore(picker, emojiBtn);
+            if (emojiBtn && emojiBtn.parentNode) {
+                emojiBtn.parentNode.insertBefore(picker, emojiBtn);
+            }
         }
         
         picker.style.display = picker.style.display === 'none' ? 'block' : 'none';
@@ -647,8 +642,33 @@ class ChatManager {
     }
 }
 
-// Export for use in other files (if using modules)
-// export default ChatManager;
-
-// Alternative: Make it globally available
+// Make it globally available
 window.ChatManager = ChatManager;
+
+// Auto-initialize chat when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, checking for chat initialization...');
+    
+    // Wait a bit for game managers to initialize
+    setTimeout(() => {
+        if (window.currentRoomId && typeof io !== 'undefined') {
+            console.log('Auto-initializing chat manager...');
+            
+            // Check if a game manager already created the socket
+            let socket;
+            if (window.ticTacToeGame && window.ticTacToeGame.socket) {
+                socket = window.ticTacToeGame.socket;
+            } else if (window.connect4Game && window.connect4Game.socket) {
+                socket = window.connect4Game.socket;
+            } else {
+                // Create socket if not exists
+                socket = io();
+            }
+            
+            if (!window.chatManager) {
+                window.chatManager = new ChatManager(socket, window.currentRoomId);
+                console.log('Chat manager auto-initialized');
+            }
+        }
+    }, 1000);
+});
