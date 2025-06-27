@@ -8,10 +8,14 @@ const socketRegistry = require('./modules/common/socketRegistry');
 const chatSocketManager = require('./modules/chat/socketManager');
 const ticTacToeSocketManager = require('./modules/games/tictactoe/socket');
 const connect4SocketManager = require('./modules/games/connect4/socket');
+const bingoSocketManager = require('./modules/games/bingo/socket');
+const dotsLinesSocketManager = require('./modules/games/dotslines/socket');
 
 // Import routes
 const ticTacToeRoutes = require('./modules/games/tictactoe/routes');
 const connect4Routes = require('./modules/games/connect4/routes');
+const bingoRoutes = require('./modules/games/bingo/routes');
+const dotsLinesRoutes = require('./modules/games/dotslines/routes');
 const chatRoutes = require('./modules/chat/routes');
 const userRoutes = require('./modules/user/routes');
 
@@ -32,6 +36,8 @@ app.get('/', (req, res) => {
 });
 app.use('/games/tictactoe', ticTacToeRoutes);
 app.use('/games/connect4', connect4Routes);
+app.use('/games/bingo', bingoRoutes);
+app.use('/games/dotslines', dotsLinesRoutes);
 app.use('/chat', chatRoutes);
 app.use('/user', userRoutes);
 
@@ -39,7 +45,7 @@ app.use('/user', userRoutes);
 app.get('/games/:gameType/:roomId', (req, res) => {
     const { gameType, roomId } = req.params;
     
-    const validGames = ['tictactoe', 'connect4', 'chess'];
+    const validGames = ['tictactoe', 'connect4', 'bingo', 'dotslines'];
     if (!validGames.includes(gameType)) {
         return res.status(404).send('Game type not supported');
     }
@@ -50,21 +56,22 @@ app.get('/games/:gameType/:roomId', (req, res) => {
         roomId: roomId 
     });
 });
-app.get('/game/:roomId', (req, res) => {
-    res.redirect(`/games/tictactoe/${req.params.roomId}`);
-});
 
 // Initialize socket managers
 socketRegistry.initialize(io);
 chatSocketManager.initialize(io);
 ticTacToeSocketManager.initialize(io);
 connect4SocketManager.initialize(io);
+bingoSocketManager.initialize(io);
+dotsLinesSocketManager.initialize(io);
 
 console.log('Socket managers initialized:');
 console.log('- Registry:', socketRegistry ? 'OK' : 'FAILED');
 console.log('- Chat:', chatSocketManager ? 'OK' : 'FAILED');
 console.log('- TicTacToe:', ticTacToeSocketManager ? 'OK' : 'FAILED');
 console.log('- Connect4:', connect4SocketManager ? 'OK' : 'FAILED');
+console.log('- Bingo:', bingoSocketManager ? 'OK' : 'FAILED');
+console.log('- DotsLines:', dotsLinesSocketManager ? 'OK' : 'FAILED');
 
 // Socket.io connection handling
 io.on('connection', (socket) => {
@@ -81,6 +88,10 @@ io.on('connection', (socket) => {
         
         if (detectedGameType === 'connect4') {
             connect4SocketManager.handleJoinRoom(socket, io, roomId, playerName);
+        } else if (detectedGameType === 'bingo') {
+            bingoSocketManager.handleJoinRoom(socket, io, roomId, playerName);
+        } else if (detectedGameType === 'dotslines') {
+            dotsLinesSocketManager.handleJoinRoom(socket, io, roomId, playerName);
         } else {
             ticTacToeSocketManager.handleJoinRoom(socket, io, roomId, playerName);
         }
@@ -91,13 +102,17 @@ io.on('connection', (socket) => {
         getRoom: (roomId) => {
             // Check both game managers for the room
             return ticTacToeSocketManager.gameRooms.get(roomId) || 
-                   connect4SocketManager.gameRooms.get(roomId);
+                   connect4SocketManager.gameRooms.get(roomId) ||
+                   bingoSocketManager.gameRooms.get(roomId) ||
+                   dotsLinesSocketManager.gameRooms.get(roomId);
         },
         getAllRooms: () => {
             // Combine rooms from both managers
             const allRooms = new Map();
             ticTacToeSocketManager.gameRooms.forEach((room, id) => allRooms.set(id, room));
             connect4SocketManager.gameRooms.forEach((room, id) => allRooms.set(id, room));
+            bingoSocketManager.gameRooms.forEach((room, id) => allRooms.set(id, room));
+            dotsLinesSocketManager.gameRooms.forEach((room, id) => allRooms.set(id, room));
             return allRooms;
         }
     });
@@ -105,6 +120,7 @@ io.on('connection', (socket) => {
     // Let each game manager handle their specific events
     ticTacToeSocketManager.handleGameEvents(socket, io, socketRegistry);
     connect4SocketManager.handleGameEvents(socket, io, socketRegistry);
+    bingoSocketManager.handleGameEvents(socket, io, socketRegistry);
     
     socket.on('disconnect', () => {
         console.log('User disconnected:', socket.id);
@@ -112,6 +128,7 @@ io.on('connection', (socket) => {
         chatSocketManager.handleDisconnection(socket);
         ticTacToeSocketManager.handleDisconnection(socket, io);
         connect4SocketManager.handleDisconnection(socket, io);
+        bingoSocketManager.handleDisconnection(socket, io);
     });
 });
 

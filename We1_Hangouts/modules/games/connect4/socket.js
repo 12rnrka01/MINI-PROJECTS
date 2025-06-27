@@ -393,65 +393,11 @@ class Connect4SocketManager {
             this.startNewRound(room, roomId);
         });
 
-        // Handle reactions for Connect4
         socket.on('send-reaction', (roomId, reactionData) => {
             if (!socket.playerData || socket.playerData.gameType !== 'connect4') return;
-            
             io.to(roomId).emit('show-reaction', reactionData);
         });
 
-        // Handle chat messages for Connect4
-        socket.on('send-message', (roomId, message) => {
-            if (!socket.playerData || socket.playerData.gameType !== 'connect4') return;
-            
-            roomId = roomId.toUpperCase();
-            const room = this.gameRooms.get(roomId);
-            if (!room) return;
-            
-            const player = room.players.find(p => p.id === socket.id);
-            if (!player) return;
-            
-            const chatMessage = {
-                id: Date.now(),
-                playerName: player.name,
-                message: message,
-                timestamp: new Date().toLocaleTimeString()
-            };
-            
-            room.messages.push(chatMessage);
-            
-            // Keep only last 50 messages
-            if (room.messages.length > 50) {
-                room.messages = room.messages.slice(-50);
-            }
-            
-            io.to(roomId).emit('new-message', chatMessage);
-        });
-
-        // Handle typing indicators
-        socket.on('typing-start', (roomId) => {
-            if (!socket.playerData || socket.playerData.gameType !== 'connect4') return;
-            
-            const room = this.gameRooms.get(roomId);
-            if (!room) return;
-            
-            const player = room.players.find(p => p.id === socket.id);
-            if (player) {
-                socket.to(roomId).emit('player-typing', { playerName: player.name, typing: true });
-            }
-        });
-        
-        socket.on('typing-stop', (roomId) => {
-            if (!socket.playerData || socket.playerData.gameType !== 'connect4') return;
-            
-            const room = this.gameRooms.get(roomId);
-            if (!room) return;
-            
-            const player = room.players.find(p => p.id === socket.id);
-            if (player) {
-                socket.to(roomId).emit('player-typing', { playerName: player.name, typing: false });
-            }
-        });
     }
 
     sendStatsUpdate(roomId, room, io) {

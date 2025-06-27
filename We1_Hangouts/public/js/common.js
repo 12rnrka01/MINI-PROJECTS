@@ -151,6 +151,12 @@ document.addEventListener('DOMContentLoaded', function() {
             if (window.connect4Game) {
                 window.connect4Game.soundEnabled = soundEnabled;
             }
+            if (window.bingoGame) {
+                window.bingoGame.soundEnabled = soundEnabled;
+            }
+            if (window.dotsLinesGame) {
+                window.dotsLinesGame.soundEnabled = soundEnabled;
+            }
         });
         
         function updateSoundButton(enabled) {
@@ -175,6 +181,12 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             if (window.connect4Game) {
                 window.connect4Game.volume = volume / 100;
+            }
+            if (window.bingoGame) {
+                window.bingoGame.volume = volume / 100;
+            }
+            if (window.dotsLinesGame) {
+                window.dotsLinesGame.volume = volume / 100;
             }
         });
     }
