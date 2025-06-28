@@ -608,9 +608,13 @@ class ChatManager {
             if (emojiBtn && emojiBtn.parentNode) {
                 emojiBtn.parentNode.insertBefore(picker, emojiBtn);
             }
+            picker.style.display ='block';
+            
+        }else{
+            
+            picker.style.display = picker.style.display === 'none' ? 'block' : 'none';
         }
         
-        picker.style.display = picker.style.display === 'none' ? 'block' : 'none';
     }
     
     createEmojiPicker() {

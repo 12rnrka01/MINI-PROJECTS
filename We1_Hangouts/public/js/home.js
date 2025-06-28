@@ -37,10 +37,4 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Global function for quick game creation (used by header)
-    function createQuickRoom() {
-        const roomId = 'ROOM_' + Math.random().toString(36).substr(2, 9).toUpperCase();
-        window.location.href = `/games/tictactoe/${roomId}`; // Default to tic-tac-toe
-    }
-
 });

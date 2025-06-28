@@ -11,7 +11,6 @@
 
             <div class="game-timer">
                 <span>Game Time: <strong id="game-time">00:00</strong></span>
-                <span>Turn: <strong id="turn-time">--</strong></span>
             </div>
 
             <!-- Player Info Section -->
@@ -81,7 +80,7 @@
                             </div>
                         </div>
                     </div>
-                <% } else if (gameType === 'tic-tac-toe') { %>
+                <% } else if (gameType === 'tictactoe') { %>
                     <!-- Tic-Tac-Toe Player Cards -->
                     <div class="player-card" id="player-x">
                         <div class="player-header">
@@ -160,12 +159,8 @@
             <!-- Game Board - Conditional based on game type -->
             <% if (gameType === 'connect4') { %>
                 <%- include('games/connect4/connect4-game-board') %>
-            <% } else if (gameType === 'tic-tac-toe') { %>
+            <% } else if (gameType === 'tictactoe') { %>
                 <%- include('games/tic-tac-toe/tic-tac-toe-game-board') %>
-            <% } else if (gameType === 'bingo') { %>
-                <%- include('games/bingo/bingo-game-board') %>
-            <% } else if (gameType === 'dotslines') { %>
-                <%- include('games/dotslines/dotslines-game-board') %>
             <% } %>
             
             <div class="game-controls">
@@ -199,12 +194,6 @@
 <% if (gameType === 'connect4') { %>
     <script src="/js/connect4-game.js"></script>
     <link rel="stylesheet" href="/css/game_connect4.css">
-<% } else if (gameType === 'tic-tac-toe') { %>
+<% } else if (gameType === 'tictactoe') { %>
     <script src="/js/tictactoe-game.js"></script>
-<% } else if (gameType === 'bingo') { %>
-    <script src="/js/bingo-game.js"></script>
-    <link rel="stylesheet" href="/css/game_bingo.css">
-<% } else if (gameType === 'dotslines') { %>
-    <script src="/js/dotslines-game.js"></script>
-    <link rel="stylesheet" href="/css/game_dotslines.css">
 <% } %>

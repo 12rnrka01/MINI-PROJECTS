@@ -19,11 +19,9 @@ window.GameUtils = {
         return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     },
 
-    // Player name management - integrates with existing gameHub_user_session
     getStoredPlayerName: function() {
         try {
-            // Try to get from existing gameHub_user_session first
-            const userSession = localStorage.getItem('gameHub_user_session');
+            const userSession = localStorage.getItem('playerName');
             if (userSession) {
                 const sessionData = JSON.parse(userSession);
                 return sessionData.username || sessionData.name || sessionData.playerName || '';
@@ -37,16 +35,16 @@ window.GameUtils = {
     },
 
     setStoredPlayerName: function(name) {
+        debugger
         if (name && name.trim().length > 0) {
             const playerName = name.trim();
             
             try {
-                // Update existing gameHub_user_session
-                let userSession = localStorage.getItem('gameHub_user_session');
+                let userSession = localStorage.getItem('playerName');
                 if (userSession) {
                     const sessionData = JSON.parse(userSession);
                     sessionData.username = playerName;
-                    localStorage.setItem('gameHub_user_session', JSON.stringify(sessionData));
+                    localStorage.setItem('playerName', JSON.stringify(sessionData));
                 } else {
                     // Create new session if none exists
                     const newSession = {
@@ -54,33 +52,29 @@ window.GameUtils = {
                         userId: 'user_' + Math.random().toString(36).substr(2, 9),
                         createdAt: new Date().toISOString()
                     };
-                    localStorage.setItem('gameHub_user_session', JSON.stringify(newSession));
+                    localStorage.setItem('playerName', JSON.stringify(newSession));
                 }
             } catch (e) {
                 console.warn('Could not update user session:', e);
             }
-            
-            // Also store as simple fallback
-            localStorage.setItem('playerName', playerName);
         }
     },
 
     clearStoredPlayerName: function() {
+        debugger
         try {
-            // Clear from gameHub_user_session
-            const userSession = localStorage.getItem('gameHub_user_session');
+            const userSession = localStorage.getItem('playerName');
             if (userSession) {
                 const sessionData = JSON.parse(userSession);
                 delete sessionData.username;
                 delete sessionData.name;
                 delete sessionData.playerName;
-                localStorage.setItem('gameHub_user_session', JSON.stringify(sessionData));
+                localStorage.setItem('playerName', JSON.stringify(sessionData));
             }
         } catch (e) {
             console.warn('Could not clear user session:', e);
         }
         
-        // Also clear simple storage
         localStorage.removeItem('playerName');
     },
 
@@ -126,9 +120,13 @@ window.GameUtils = {
 // Global quick room creation function
 function createQuickRoom() {
     const roomId = window.GameUtils.generateRoomId();
-    window.location.href = `/games/tictactoe/${roomId}`;
+    const gameType = getURLPathSegment(1);
+    window.location.href = `/games/${gameType}/${roomId}`;
 }
-
+function getURLPathSegment(index) {
+    const pathSegments = window.location.pathname.split('/').filter(Boolean);
+    return pathSegments[index]; // index 0 = 'games', index 1 = 'chess', etc.
+}
 // Sound control functionality
 document.addEventListener('DOMContentLoaded', function() {
     // Sound toggle functionality
@@ -151,12 +149,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if (window.connect4Game) {
                 window.connect4Game.soundEnabled = soundEnabled;
             }
-            if (window.bingoGame) {
-                window.bingoGame.soundEnabled = soundEnabled;
-            }
-            if (window.dotsLinesGame) {
-                window.dotsLinesGame.soundEnabled = soundEnabled;
-            }
         });
         
         function updateSoundButton(enabled) {
@@ -172,6 +164,7 @@ document.addEventListener('DOMContentLoaded', function() {
         volumeSlider.value = volume;
         
         volumeSlider.addEventListener('input', (e) => {
+            debugger
             const volume = e.target.value;
             localStorage.setItem('gameVolume', volume);
             
@@ -181,12 +174,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             if (window.connect4Game) {
                 window.connect4Game.volume = volume / 100;
-            }
-            if (window.bingoGame) {
-                window.bingoGame.volume = volume / 100;
-            }
-            if (window.dotsLinesGame) {
-                window.dotsLinesGame.volume = volume / 100;
             }
         });
     }

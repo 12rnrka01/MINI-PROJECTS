@@ -1,7 +1,7 @@
 // User Session Manager - Handles name persistence and user settings
 class UserSessionManager {
     constructor() {
-        this.storageKey = 'gameHub_user_session';
+        this.storageKey = 'playerName';
         this.currentUser = null;
         this.defaultAvatars = ['🎮', '🎯', '🏆', '⭐', '🎲', '🎪', '🎊', '🎈'];
         
@@ -9,7 +9,6 @@ class UserSessionManager {
         this.setupHeaderInterface();
     }
     
-    // Load user session from localStorage
     loadUserSession() {
         try {
             const savedSession = localStorage.getItem(this.storageKey);
@@ -25,6 +24,7 @@ class UserSessionManager {
     
     // Save user session to localStorage
     saveUserSession() {
+        debugger
         try {
             if (this.currentUser) {
                 localStorage.setItem(this.storageKey, JSON.stringify(this.currentUser));
@@ -39,11 +39,7 @@ class UserSessionManager {
     setUser(name, avatar = null) {
         this.currentUser = {
             name: name.trim(),
-            avatar: avatar || this.getRandomAvatar(),
-            lastActive: new Date().toISOString(),
-            gamesPlayed: this.currentUser?.gamesPlayed || 0,
-            totalWins: this.currentUser?.totalWins || 0,
-            joinedDate: this.currentUser?.joinedDate || new Date().toISOString()
+            avatar: avatar || this.getRandomAvatar()
         };
         
         this.saveUserSession();
@@ -86,6 +82,7 @@ class UserSessionManager {
         this.currentUser = null;
         try {
             localStorage.removeItem(this.storageKey);
+            window.location.reload();
         } catch (error) {
             console.warn('Could not clear user session:', error);
         }
@@ -152,23 +149,6 @@ class UserSessionManager {
                             <label for="user-name-input">Your Name:</label>
                             <input type="text" id="user-name-input" maxlength="20" placeholder="Enter your name">
                         </div>
-                        <div class="user-stats" id="user-stats" style="display: none;">
-                            <h4>Your Stats</h4>
-                            <div class="stats-grid">
-                                <div class="stat-item">
-                                    <span class="stat-value" id="total-games">0</span>
-                                    <span class="stat-label">Games</span>
-                                </div>
-                                <div class="stat-item">
-                                    <span class="stat-value" id="total-wins">0</span>
-                                    <span class="stat-label">Wins</span>
-                                </div>
-                                <div class="stat-item">
-                                    <span class="stat-value" id="win-rate">0%</span>
-                                    <span class="stat-label">Win Rate</span>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -183,6 +163,7 @@ class UserSessionManager {
     
     // Update header display
     updateHeaderDisplay() {
+        debugger
         const userInfo = document.getElementById('user-info');
         const loginBtn = document.getElementById('login-btn');
         const userAvatar = document.getElementById('user-avatar');
@@ -203,6 +184,7 @@ class UserSessionManager {
     
     // Setup event listeners
     setupEventListeners() {
+        debugger
         // Login button
         const loginBtn = document.getElementById('login-btn');
         if (loginBtn) {
@@ -267,7 +249,6 @@ class UserSessionManager {
         const title = document.getElementById('user-modal-title');
         const nameInput = document.getElementById('user-name-input');
         const clearBtn = document.getElementById('clear-user-btn');
-        const userStats = document.getElementById('user-stats');
         
         if (modal) modal.style.display = 'flex';
         
@@ -275,16 +256,11 @@ class UserSessionManager {
             if (title) title.textContent = 'Edit Profile';
             if (nameInput) nameInput.value = this.currentUser.name;
             if (clearBtn) clearBtn.style.display = 'block';
-            if (userStats) {
-                userStats.style.display = 'block';
-                this.updateStatsDisplay();
-            }
             this.selectAvatar(this.currentUser.avatar);
         } else {
             if (title) title.textContent = 'Set Your Name';
             if (nameInput) nameInput.value = '';
             if (clearBtn) clearBtn.style.display = 'none';
-            if (userStats) userStats.style.display = 'none';
             this.selectAvatar(this.getRandomAvatar());
         }
         
@@ -315,6 +291,7 @@ class UserSessionManager {
     
     // Save user
     saveUser() {
+        debugger
         const nameInput = document.getElementById('user-name-input');
         const name = nameInput?.value.trim();
         

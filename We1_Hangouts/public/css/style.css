@@ -11,7 +11,9 @@ body {
     min-height: 100vh;
     color: #333;
 }
-
+.hidden{
+    display: none;
+}
 /* Header Styles */
 header {
     background: rgb(0 0 0 / 27%);
@@ -56,13 +58,10 @@ header {
 }
 
 .hero-section h1 {
-    font-size: 3rem;
     margin-bottom: 1rem;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
 }
 
 .hero-section p {
-    font-size: 1.2rem;
     opacity: 0.9;
 }
 
@@ -77,7 +76,7 @@ header {
 .game-card {
     background: white;
     border-radius: 15px;
-    padding: 2rem;
+    padding: 1rem;
     box-shadow: 0 10px 30px rgba(0,0,0,0.2);
     transition: transform 0.3s, box-shadow 0.3s;
 }
@@ -784,7 +783,7 @@ mark {
 .features {
     background: rgba(255, 255, 255, 0.1);
     border-radius: 20px;
-    padding: 2rem;
+    padding: 1rem;
     backdrop-filter: blur(10px);
 }
 
@@ -799,6 +798,7 @@ mark {
     display: flex;
     flex-wrap: wrap;
     gap: 1.5rem;
+    justify-content: center;
 }
 
 .feature-item {
@@ -1074,10 +1074,6 @@ mark {
         text-align: center;
     }
     
-    .hero-section h1 {
-        font-size: 2rem;
-    }
-    
     .cell {
         font-size: 2rem;
     }
@@ -1185,16 +1181,6 @@ body {
     margin-bottom: 3rem;
 }
 
-.hero-section h1 {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-}
-
-.hero-section p {
-    font-size: 1.2rem;
-    opacity: 0.9;
-}
 
 /* Game Selection */
 .game-selection {
@@ -1202,35 +1188,6 @@ body {
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 2rem;
     margin-bottom: 3rem;
-}
-
-.game-card {
-    background: white;
-    border-radius: 15px;
-    padding: 2rem;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    transition: transform 0.3s, box-shadow 0.3s;
-}
-
-.game-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 15px 40px rgba(0,0,0,0.3);
-}
-
-.game-card.disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-.game-card h3 {
-    color: #667eea;
-    margin-bottom: 0.5rem;
-    font-size: 1.5rem;
-}
-
-.game-card p {
-    color: #666;
-    margin-bottom: 1.5rem;
 }
 
 .game-actions {
@@ -1627,22 +1584,6 @@ body {
     outline: none;
     border-color: #667eea;
 }
-
-/* Features Section */
-.features {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
-    padding: 2rem;
-    backdrop-filter: blur(10px);
-}
-
-.features h2 {
-    color: white;
-    text-align: center;
-    margin-bottom: 2rem;
-    font-size: 2rem;
-}
-
 
 /* Notifications */
 .notification {

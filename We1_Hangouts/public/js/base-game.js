@@ -1,4 +1,4 @@
-// public/js/base-game.js - FIXED VERSION - Complete with proper chat integration
+// public/js/base-game.js - Enhanced Base Game Manager with Room Locking and Advanced Features
 
 class BaseGameManager {
     constructor(gameType, roomId) {
@@ -10,17 +10,50 @@ class BaseGameManager {
         this.soundEnabled = true;
         this.gameStartTime = null;
         this.gameTimer = null;
+        this.roomLocked = false;
+        this.notificationQueue = [];
+        this.maxNotifications = 3;
         
         console.log(`Initializing BaseGameManager for ${gameType} in room ${roomId}`);
         
         this.initializeSocket();
         this.bindCommonEvents();
         this.handlePlayerNameModal();
+        this.loadUserPreferences();
         
         // Setup chat handlers - delay to ensure socket is ready
         setTimeout(() => {
             this.setupChatHandlers();
         }, 500);
+    }
+
+    loadUserPreferences() {
+        try {
+            const saved = localStorage.getItem('gamePreferences');
+            if (saved) {
+                const prefs = JSON.parse(saved);
+                this.soundEnabled = prefs.soundEnabled !== false;
+                this.volume = prefs.volume || 0.3;
+                this.maxNotifications = prefs.maxNotifications || 3;
+            }
+        } catch (e) {
+            console.warn('Could not load user preferences:', e);
+        }
+    }
+
+    saveUserPreferences() {
+
+        debugger
+        try {
+            const prefs = {
+                soundEnabled: this.soundEnabled,
+                volume: this.volume || 0.3,
+                maxNotifications: this.maxNotifications
+            };
+            localStorage.setItem('gamePreferences', JSON.stringify(prefs));
+        } catch (e) {
+            console.warn('Could not save user preferences:', e);
+        }
     }
 
     setupChatHandlers() {
@@ -51,12 +84,11 @@ class BaseGameManager {
         const playerNameInput = document.getElementById('player-name-input');
         const joinGameBtn = document.getElementById('join-game-btn');
 
-        // Check if player name is stored in your existing user session system
+        // Check if player name is stored in existing user session system
         let storedPlayerName = null;
         
-        // Try to get from your existing gameHub_user_session
         try {
-            const userSession = localStorage.getItem('gameHub_user_session');
+            const userSession = localStorage.getItem('playerName');
             if (userSession) {
                 const sessionData = JSON.parse(userSession);
                 storedPlayerName = sessionData.username || sessionData.name || sessionData.playerName;
@@ -97,7 +129,7 @@ class BaseGameManager {
             joinGameBtn.addEventListener('click', () => {
                 const playerName = playerNameInput.value.trim();
                 if (playerName) {
-                    // Store name in your existing user session system
+                    // Store name in existing user session system
                     this.savePlayerNameToSession(playerName);
                     
                     this.joinGame(playerName);
@@ -116,18 +148,14 @@ class BaseGameManager {
             });
         }
 
-        // Add "Change Name" functionality
-        this.addChangeNameButton();
     }
 
     savePlayerNameToSession(playerName) {
+        debugger
         try {
-            // Try to update existing gameHub_user_session
-            let userSession = localStorage.getItem('gameHub_user_session');
+            let userSession = localStorage.getItem('playerName');
             if (userSession) {
-                const sessionData = JSON.parse(userSession);
-                sessionData.username = playerName;
-                localStorage.setItem('gameHub_user_session', JSON.stringify(sessionData));
+                // Existed data should not be update
             } else {
                 // Create new session if none exists
                 const newSession = {
@@ -135,30 +163,10 @@ class BaseGameManager {
                     userId: 'user_' + Math.random().toString(36).substr(2, 9),
                     createdAt: new Date().toISOString()
                 };
-                localStorage.setItem('gameHub_user_session', JSON.stringify(newSession));
+                localStorage.setItem('playerName', JSON.stringify(newSession));
             }
-            
-            // Also store as simple fallback
-            localStorage.setItem('playerName', playerName);
         } catch (e) {
             console.warn('Could not save to localStorage:', e);
-            // Fallback to simple storage
-            localStorage.setItem('playerName', playerName);
-        }
-    }
-
-    addChangeNameButton() {
-        // Add a change name button to the header or somewhere accessible
-        const navLinks = document.querySelector('.nav-links');
-        if (navLinks && !document.getElementById('change-name-btn')) {
-            const changeNameBtn = document.createElement('li');
-            changeNameBtn.innerHTML = '<a href="#" id="change-name-btn">Change Name</a>';
-            navLinks.appendChild(changeNameBtn);
-
-            document.getElementById('change-name-btn').addEventListener('click', (e) => {
-                e.preventDefault();
-                this.showChangeNameModal();
-            });
         }
     }
 
@@ -170,7 +178,7 @@ class BaseGameManager {
             // Get current name from user session
             let currentName = '';
             try {
-                const userSession = localStorage.getItem('gameHub_user_session');
+                const userSession = localStorage.getItem('playerName');
                 if (userSession) {
                     const sessionData = JSON.parse(userSession);
                     currentName = sessionData.username || sessionData.name || sessionData.playerName || '';
@@ -196,6 +204,7 @@ class BaseGameManager {
         this.socket.on('game-state', (gameState) => {
             console.log('Received game state:', gameState);
             this.gameState = gameState;
+            this.roomLocked = gameState.isLocked || false;
             this.onGameStateUpdate(gameState);
             
             // Update chat with current player data after game state update
@@ -224,12 +233,20 @@ class BaseGameManager {
 
         this.socket.on('player-joined', (data) => {
             console.log('Player joined:', data);
-            this.showNotification(`${data.playerName} joined the game`, 'success');
+            if (window.notificationManager) {
+                window.notificationManager.playerJoined(data.playerName);
+            } else {
+                this.showNotification(`${data.playerName} joined the game`, 'success');
+            }
         });
 
         this.socket.on('player-left', (data) => {
             console.log('Player left:', data);
-            this.showNotification(`${data.playerName} left the game`, 'warning');
+            if (window.notificationManager) {
+                window.notificationManager.playerLeft(data.playerName);
+            } else {
+                this.showNotification(`${data.playerName} left the game`, 'warning');
+            }
         });
 
         this.socket.on('room-activity', (data) => {
@@ -252,8 +269,34 @@ class BaseGameManager {
             this.showNotification('Room is full!', 'error');
         });
 
+        this.socket.on('room-locked', (data) => {
+            console.log('Room locked:', data);
+            this.roomLocked = true;
+            if (window.notificationManager) {
+                window.notificationManager.roomLocked(data.lockedBy);
+            } else {
+                this.showNotification(`Room locked by ${data.lockedBy}`, 'warning');
+            }
+        });
+
+        this.socket.on('room-unlocked', (data) => {
+            console.log('Room unlocked:', data);
+            this.roomLocked = false;
+            if (window.notificationManager) {
+                window.notificationManager.roomUnlocked(data.unlockedBy);
+            } else {
+                this.showNotification(`Room unlocked by ${data.unlockedBy}`, 'success');
+            }
+        });
+
         this.socket.on('disconnect', () => {
             console.log('Disconnected from server');
+            this.showNotification('Disconnected from server', 'error');
+        });
+
+        this.socket.on('reconnect', () => {
+            console.log('Reconnected to server');
+            this.showNotification('Reconnected to server', 'success');
         });
     }
 
@@ -291,38 +334,7 @@ class BaseGameManager {
                 this.sendReaction(reaction);
             });
         });
-    }
 
-    // Methods to be overridden by specific game classes
-    onGameStateUpdate(gameState) {
-        // Override in child classes
-    }
-
-    onGameOver(data) {
-        this.playSound('gameOver');
-        this.updateRoundHistory(data.roundHistory);
-        
-        setTimeout(() => {
-            if (data.winner === 'draw' || data.winner === 'tie') {
-                this.showNotification("Game ended in a draw!", 'info');
-            } else {
-                const isWinner = this.isCurrentPlayerWinner(data.winner);
-                
-                if (isWinner) {
-                    this.showNotification("🎉 You won!", 'success');
-                } else {
-                    const winnerName = this.getWinnerName(data.winner);
-                    this.showNotification(`${winnerName} won this round`, 'info');
-                }
-            }
-        }, 1000);
-    }
-
-    onGameReset(data) {
-        this.gameStartTime = null;
-        this.stopGameTimer();
-        this.showNotification("New game started!", 'info');
-        this.playSound('newGame');
     }
 
     // Common utility methods
@@ -339,7 +351,7 @@ class BaseGameManager {
         // Send game type along with join request
         this.socket.emit('join-room', this.roomId, playerName.trim(), this.gameType);
         
-        // Store the player name using your existing session system
+        // Store the player name using existing session system
         this.savePlayerNameToSession(playerName.trim());
         
         // Show a joining message
@@ -362,6 +374,13 @@ class BaseGameManager {
 
     leaveGame() {
         if (confirm('Are you sure you want to leave the game?')) {
+            // Clean up
+            if (window.chatManager) {
+                window.chatManager.disconnect();
+            }
+            if (this.gameTimer) {
+                clearInterval(this.gameTimer);
+            }
             window.location.href = '/';
         }
     }
@@ -480,6 +499,7 @@ class BaseGameManager {
                     oscillator.type = 'triangle';
                     break;
                 case 'newGame':
+                case 'gameStart':
                     oscillator.frequency.value = 1000;
                     oscillator.type = 'sine';
                     break;
@@ -500,7 +520,28 @@ class BaseGameManager {
         }
     }
 
-    showNotification(message, type = 'info') {
+    showNotification(message, type = 'info', options = {}) {
+        // Use advanced notification manager if available
+        if (window.notificationManager) {
+            const notificationOptions = {
+                category: this.gameType,
+                ...options
+            };
+            
+            switch (type) {
+                case 'success':
+                    return window.notificationManager.success(message, notificationOptions);
+                case 'error':
+                    return window.notificationManager.error(message, notificationOptions);
+                case 'warning':
+                    return window.notificationManager.warning(message, notificationOptions);
+                case 'info':
+                default:
+                    return window.notificationManager.info(message, notificationOptions);
+            }
+        }
+
+        // Fallback notification system
         const notification = document.createElement('div');
         notification.className = `notification notification-${type}`;
         notification.textContent = message;
@@ -567,20 +608,33 @@ class BaseGameManager {
     }
 
     displayReaction(reactionData) {
-        // Create floating reaction animation
+        console.log(reactionData);
+    
+        // Create floating reaction animation container
         const reaction = document.createElement('div');
-        reaction.textContent = reactionData.reaction;
+        reaction.innerHTML = `
+            <div>${reactionData.reaction}</div>
+            <div style="font-size: 1rem; opacity: 0.8;">${reactionData.playerName}</div>
+        `;
+    
+        // Apply enhanced inline styles
         reaction.style.cssText = `
             position: fixed;
-            font-size: 2rem;
+            font-size: 1.8rem;
+            color: #667eea;
+            border-radius: 1.5rem;
+            padding: 0.5rem 1rem;
             z-index: 1000;
             pointer-events: none;
+            text-align: center;
+            line-height: 1.4;
             animation: reactionFloat 2s ease-out forwards;
             left: ${Math.random() * 80 + 10}%;
             top: 60%;
+            transform: translateX(-50%);
         `;
-        
-        // Add CSS animation if not exists
+    
+        // Add animation CSS if not already present
         if (!document.getElementById('reaction-styles')) {
             const style = document.createElement('style');
             style.id = 'reaction-styles';
@@ -590,26 +644,244 @@ class BaseGameManager {
                         transform: translateY(0) scale(1);
                         opacity: 1;
                     }
+                    50% {
+                        transform: translateY(-60px) scale(1.2);
+                        opacity: 0.9;
+                    }
                     100% {
-                        transform: translateY(-100px) scale(1.5);
+                        transform: translateY(-120px) scale(1.4);
                         opacity: 0;
                     }
                 }
             `;
             document.head.appendChild(style);
         }
-        
+    
         document.body.appendChild(reaction);
-        
-        // Remove after animation
+    
+        // Remove element after animation
         setTimeout(() => {
             if (reaction.parentNode) {
                 reaction.parentNode.removeChild(reaction);
             }
         }, 2000);
-        
+    
         // Show notification
         this.showNotification(`${reactionData.playerName} reacted with ${reactionData.reaction}`, 'info');
+    }
+    
+
+    // Room locking functionality
+    isRoomLocked() {
+        return this.roomLocked;
+    }
+
+    requestRoomLock() {
+        if (this.socket) {
+            this.socket.emit('lock-room', this.roomId);
+        }
+    }
+
+    requestRoomUnlock() {
+        if (this.socket) {
+            this.socket.emit('unlock-room', this.roomId);
+        }
+    }
+
+    // Keyboard shortcuts
+    setupKeyboardShortcuts() {
+        document.addEventListener('keydown', (e) => {
+            // Only handle shortcuts if not typing in an input
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                return;
+            }
+
+            switch (e.key) {
+                case 'r':
+                case 'R':
+                    if (e.ctrlKey || e.metaKey) {
+                        e.preventDefault();
+                        this.resetGame();
+                    }
+                    break;
+                case 'l':
+                case 'L':
+                    if (e.ctrlKey || e.metaKey) {
+                        e.preventDefault();
+                        this.leaveGame();
+                    }
+                    break;
+                case 'm':
+                case 'M':
+                    if (e.ctrlKey || e.metaKey) {
+                        e.preventDefault();
+                        this.toggleGameNotifications();
+                    }
+                    break;
+                case 's':
+                case 'S':
+                    if (e.ctrlKey || e.metaKey) {
+                        e.preventDefault();
+                        this.showSettingsModal();
+                    }
+                    break;
+                case 'Escape':
+                    // Close any open modals
+                    document.querySelectorAll('.modal').forEach(modal => {
+                        modal.style.display = 'none';
+                    });
+                    break;
+            }
+        });
+    }
+
+    // Performance monitoring
+    startPerformanceMonitoring() {
+        this.performanceStats = {
+            frameCount: 0,
+            lastFrameTime: performance.now(),
+            fps: 0,
+            memoryUsage: 0
+        };
+
+        const updateStats = () => {
+            const now = performance.now();
+            this.performanceStats.frameCount++;
+            
+            if (now - this.performanceStats.lastFrameTime >= 1000) {
+                this.performanceStats.fps = this.performanceStats.frameCount;
+                this.performanceStats.frameCount = 0;
+                this.performanceStats.lastFrameTime = now;
+                
+                // Update memory usage if available
+                if (performance.memory) {
+                    this.performanceStats.memoryUsage = Math.round(
+                        performance.memory.usedJSHeapSize / 1024 / 1024
+                    );
+                }
+                
+                this.updatePerformanceDisplay();
+            }
+            
+            requestAnimationFrame(updateStats);
+        };
+        
+        requestAnimationFrame(updateStats);
+    }
+
+    updatePerformanceDisplay() {
+        const perfDisplay = document.getElementById('performance-display');
+        if (perfDisplay) {
+            perfDisplay.innerHTML = `
+                FPS: ${this.performanceStats.fps} | 
+                Memory: ${this.performanceStats.memoryUsage}MB
+            `;
+        }
+    }
+
+    createPerformanceDisplay() {
+        if (document.getElementById('performance-display')) return;
+        
+        const perfDisplay = document.createElement('div');
+        perfDisplay.id = 'performance-display';
+        perfDisplay.style.cssText = `
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-family: monospace;
+            z-index: 9999;
+            display: none;
+        `;
+        document.body.appendChild(perfDisplay);
+    }
+
+    togglePerformanceDisplay() {
+        const perfDisplay = document.getElementById('performance-display');
+        if (perfDisplay) {
+            perfDisplay.style.display = perfDisplay.style.display === 'none' ? 'block' : 'none';
+        }
+    }
+
+    // Connection quality monitoring
+    monitorConnection() {
+        if (!this.socket) return;
+        
+        this.connectionStats = {
+            ping: 0,
+            quality: 'good'
+        };
+        
+        const pingInterval = setInterval(() => {
+            if (!this.socket.connected) {
+                clearInterval(pingInterval);
+                return;
+            }
+            
+            const start = Date.now();
+            this.socket.emit('ping', start);
+            
+            this.socket.once('pong', (timestamp) => {
+                this.connectionStats.ping = Date.now() - timestamp;
+                
+                if (this.connectionStats.ping < 100) {
+                    this.connectionStats.quality = 'excellent';
+                } else if (this.connectionStats.ping < 250) {
+                    this.connectionStats.quality = 'good';
+                } else if (this.connectionStats.ping < 500) {
+                    this.connectionStats.quality = 'fair';
+                } else {
+                    this.connectionStats.quality = 'poor';
+                }
+                
+                this.updateConnectionDisplay();
+            });
+        }, 5000);
+    }
+
+    updateConnectionDisplay() {
+        const connDisplay = document.getElementById('connection-display');
+        if (connDisplay) {
+            const color = {
+                excellent: '#4CAF50',
+                good: '#8BC34A',
+                fair: '#FF9800',
+                poor: '#F44336'
+            }[this.connectionStats.quality];
+            
+            connDisplay.innerHTML = `
+                <span style="color: ${color}">
+                    ${this.connectionStats.ping}ms (${this.connectionStats.quality})
+                </span>
+            `;
+        }
+    }
+
+    // Cleanup method
+    destroy() {
+        // Stop timers
+        if (this.gameTimer) {
+            clearInterval(this.gameTimer);
+        }
+        
+        // Disconnect socket
+        if (this.socket) {
+            this.socket.disconnect();
+        }
+        
+        // Clean up chat
+        if (window.chatManager) {
+            window.chatManager.disconnect();
+        }
+        
+        // Save preferences
+        this.saveUserPreferences();
+        
+        console.log('BaseGameManager destroyed');
     }
 
     // Abstract methods to be implemented by child classes
@@ -625,3 +897,123 @@ class BaseGameManager {
         throw new Error('getWinnerColor must be implemented by child class');
     }
 }
+
+// Initialize keyboard shortcuts and performance monitoring when ready
+document.addEventListener('DOMContentLoaded', () => {
+    // Add global styles for enhanced features
+    const style = document.createElement('style');
+    style.textContent = `
+        .notification-controls {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+        }
+
+        .notification-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn-mute, .btn-clear {
+            padding: 6px 12px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .btn-mute:hover, .btn-clear:hover {
+            background: #f5f5f5;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 8px;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .modal-footer {
+            padding: 15px 20px;
+            border-top: 1px solid #eee;
+            text-align: right;
+        }
+
+        .setting-group {
+            margin-bottom: 15px;
+        }
+
+        .setting-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .setting-group input[type="range"] {
+            width: 100%;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .modal-close:hover {
+            color: #333;
+        }
+
+        @media (max-width: 768px) {
+            .notification-buttons {
+                flex-direction: column;
+            }
+            
+            .modal-content {
+                margin: 10px;
+                max-width: calc(100% - 20px);
+            }
+        }
+    `;
+    document.head.appendChild(style);
+});
+
+// Global cleanup on page unload
+window.addEventListener('beforeunload', () => {
+    if (window.gameManager && typeof window.gameManager.destroy === 'function') {
+        window.gameManager.destroy();
+    }
+});
