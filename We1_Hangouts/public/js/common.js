@@ -19,65 +19,6 @@ window.GameUtils = {
         return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     },
 
-    getStoredPlayerName: function() {
-        try {
-            const userSession = localStorage.getItem('playerName');
-            if (userSession) {
-                const sessionData = JSON.parse(userSession);
-                return sessionData.username || sessionData.name || sessionData.playerName || '';
-            }
-        } catch (e) {
-            console.log('Could not parse user session');
-        }
-        
-        // Fallback to simple playerName storage
-        return localStorage.getItem('playerName') || '';
-    },
-
-    setStoredPlayerName: function(name) {
-        debugger
-        if (name && name.trim().length > 0) {
-            const playerName = name.trim();
-            
-            try {
-                let userSession = localStorage.getItem('playerName');
-                if (userSession) {
-                    const sessionData = JSON.parse(userSession);
-                    sessionData.username = playerName;
-                    localStorage.setItem('playerName', JSON.stringify(sessionData));
-                } else {
-                    // Create new session if none exists
-                    const newSession = {
-                        username: playerName,
-                        userId: 'user_' + Math.random().toString(36).substr(2, 9),
-                        createdAt: new Date().toISOString()
-                    };
-                    localStorage.setItem('playerName', JSON.stringify(newSession));
-                }
-            } catch (e) {
-                console.warn('Could not update user session:', e);
-            }
-        }
-    },
-
-    clearStoredPlayerName: function() {
-        debugger
-        try {
-            const userSession = localStorage.getItem('playerName');
-            if (userSession) {
-                const sessionData = JSON.parse(userSession);
-                delete sessionData.username;
-                delete sessionData.name;
-                delete sessionData.playerName;
-                localStorage.setItem('playerName', JSON.stringify(sessionData));
-            }
-        } catch (e) {
-            console.warn('Could not clear user session:', e);
-        }
-        
-        localStorage.removeItem('playerName');
-    },
-
     // Sound management
     playSound: function(soundType, volume = 0.3) {
         // Basic sound implementation

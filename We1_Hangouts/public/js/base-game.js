@@ -41,21 +41,6 @@ class BaseGameManager {
         }
     }
 
-    saveUserPreferences() {
-
-        debugger
-        try {
-            const prefs = {
-                soundEnabled: this.soundEnabled,
-                volume: this.volume || 0.3,
-                maxNotifications: this.maxNotifications
-            };
-            localStorage.setItem('gamePreferences', JSON.stringify(prefs));
-        } catch (e) {
-            console.warn('Could not save user preferences:', e);
-        }
-    }
-
     setupChatHandlers() {
         console.log('Setting up chat handlers...');
         
@@ -159,11 +144,12 @@ class BaseGameManager {
             } else {
                 // Create new session if none exists
                 const newSession = {
-                    username: playerName,
-                    userId: 'user_' + Math.random().toString(36).substr(2, 9),
-                    createdAt: new Date().toISOString()
+                    name: playerName,
+                    avatar: "🎮",
+                    userId: 'user_' + Math.random().toString(36).substr(2, 9)
                 };
                 localStorage.setItem('playerName', JSON.stringify(newSession));
+                window.location.reload();
             }
         } catch (e) {
             console.warn('Could not save to localStorage:', e);
@@ -878,9 +864,6 @@ class BaseGameManager {
             window.chatManager.disconnect();
         }
         
-        // Save preferences
-        this.saveUserPreferences();
-        
         console.log('BaseGameManager destroyed');
     }
 
@@ -961,12 +944,7 @@ document.addEventListener('DOMContentLoaded', () => {
             border-bottom: 1px solid #eee;
         }
 
-        .modal-body {
-            padding: 20px;
-        }
-
         .modal-footer {
-            padding: 15px 20px;
             border-top: 1px solid #eee;
             text-align: right;
         }

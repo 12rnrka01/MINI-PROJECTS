@@ -15,16 +15,12 @@ class ChatManager {
         this.dragOffset = { x: 0, y: 0 };
 
         this.chatHistory = [];
-        this.searchIndex = 0;
-        this.searchResults = [];
-        this.currentSearchIndex = 0;
         
         console.log('ChatManager initialized with:', { socket: !!socket, roomId });
         
         this.initializeChatEvents();
         this.setupChatListeners();
         this.setupChatControls();
-        this.setupChatSearch();
     }
     
     // Initialize socket events for chat
@@ -262,163 +258,6 @@ class ChatManager {
         }
         
         console.log('Chat message added to UI successfully');
-    }
-
-    setupChatSearch() {
-        // Add search functionality
-        const searchBtn = document.getElementById('chat-search-btn');
-        if (searchBtn) {
-            searchBtn.addEventListener('click', () => this.toggleSearch());
-        }
-        
-        const searchInput = document.getElementById('chat-search-input');
-        if (searchInput) {
-            searchInput.addEventListener('input', (e) => this.searchMessages(e.target.value));
-            searchInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') this.nextSearchResult();
-                if (e.key === 'Escape') this.closeSearch();
-            });
-        }
-    }
-
-    toggleSearch() {
-        const searchContainer = document.getElementById('chat-search-container');
-        if (!searchContainer) {
-            this.createSearchContainer();
-        } else {
-            searchContainer.style.display = searchContainer.style.display === 'none' ? 'flex' : 'none';
-            if (searchContainer.style.display === 'flex') {
-                document.getElementById('chat-search-input').focus();
-            }
-        }
-    }
-    
-    createSearchContainer() {
-        const searchContainer = document.createElement('div');
-        searchContainer.id = 'chat-search-container';
-        searchContainer.className = 'chat-search-container';
-        searchContainer.innerHTML = `
-            <input type="text" id="chat-search-input" placeholder="Search messages..." maxlength="50">
-            <button id="search-prev" onclick="window.chatManager.prevSearchResult()">↑</button>
-            <button id="search-next" onclick="window.chatManager.nextSearchResult()">↓</button>
-            <span id="search-results">0/0</span>
-            <button id="search-close" onclick="window.chatManager.closeSearch()">✕</button>
-        `;
-        
-        const chatHeader = document.querySelector('.chat-header');
-        if (chatHeader) {
-            chatHeader.insertAdjacentElement('afterend', searchContainer);
-        }
-    }
-
-    searchMessages(query) {
-        if (!query || query.length < 2) {
-            this.clearSearchHighlights();
-            return;
-        }
-        
-        this.clearSearchHighlights();
-        this.searchResults = [];
-        
-        // Search through chat history
-        this.chatHistory.forEach((msg, index) => {
-            if (msg.message.toLowerCase().includes(query.toLowerCase()) || 
-                msg.playerName.toLowerCase().includes(query.toLowerCase())) {
-                this.searchResults.push({
-                    index: index,
-                    element: msg.element,
-                    message: msg
-                });
-            }
-        });
-        
-        this.highlightSearchResults(query);
-        this.updateSearchCounter();
-        
-        if (this.searchResults.length > 0) {
-            this.currentSearchIndex = 0;
-            this.scrollToSearchResult(0);
-        }
-    }
-
-    highlightSearchResults(query) {
-        this.searchResults.forEach(result => {
-            const messageContent = result.element.querySelector('.message-content');
-            const authorName = result.element.querySelector('.message-author');
-            
-            if (messageContent) {
-                messageContent.innerHTML = this.highlightText(result.message.message, query);
-            }
-            if (authorName && result.message.playerName.toLowerCase().includes(query.toLowerCase())) {
-                authorName.innerHTML = this.highlightText(result.message.playerName, query);
-            }
-            
-            result.element.classList.add('search-highlighted');
-        });
-    }
-    
-    highlightText(text, query) {
-        const regex = new RegExp(`(${query})`, 'gi');
-        return this.escapeHtml(text).replace(regex, '<mark>$1</mark>');
-    }
-    
-    clearSearchHighlights() {
-        document.querySelectorAll('.chat-message').forEach(msg => {
-            msg.classList.remove('search-highlighted', 'search-current');
-            
-            const content = msg.querySelector('.message-content');
-            const author = msg.querySelector('.message-author');
-            
-            if (content) content.innerHTML = this.escapeHtml(content.textContent);
-            if (author) author.innerHTML = this.escapeHtml(author.textContent);
-        });
-    }
-
-    nextSearchResult() {
-        if (!this.searchResults || this.searchResults.length === 0) return;
-        
-        this.currentSearchIndex = (this.currentSearchIndex + 1) % this.searchResults.length;
-        this.scrollToSearchResult(this.currentSearchIndex);
-    }
-    
-    prevSearchResult() {
-        if (!this.searchResults || this.searchResults.length === 0) return;
-        
-        this.currentSearchIndex = this.currentSearchIndex === 0 ? 
-            this.searchResults.length - 1 : this.currentSearchIndex - 1;
-        this.scrollToSearchResult(this.currentSearchIndex);
-    }
-    
-    scrollToSearchResult(index) {
-        if (!this.searchResults || this.searchResults.length === 0) return;
-        // Remove current highlighting
-        document.querySelectorAll('.search-current').forEach(el => {
-            el.classList.remove('search-current');
-        });
-        
-        // Highlight current result
-        const result = this.searchResults[index];
-        result.element.classList.add('search-current');
-        result.element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        
-        this.updateSearchCounter();
-    }
-    
-    updateSearchCounter() {
-        const counter = document.getElementById('search-results');
-        if (counter) {
-            const total = this.searchResults ? this.searchResults.length : 0;
-            counter.textContent = total > 0 ? 
-                `${this.currentSearchIndex + 1}/${total}` : '0/0';
-        }
-    }
-
-    closeSearch() {
-        const searchContainer = document.getElementById('chat-search-container');
-        if (searchContainer) {
-            searchContainer.style.display = 'none';
-        }
-        this.clearSearchHighlights();
     }
 
     replyToMessage(messageId, authorName) {
