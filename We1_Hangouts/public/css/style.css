@@ -1834,3 +1834,32 @@ footer {
         grid-template-columns: repeat(3, 1fr);
     }
 }
+
+
+.current-player {
+    position: relative;
+    padding: 10px 20px;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    animation: borderPulse 1s infinite linear;
+}
+
+/* Glowing border animation */
+@keyframes borderPulse {
+    0% {
+        border-color: red;
+        box-shadow: 0 0 8px rgba(255, 0, 0, 0.7);
+    }
+    33% {
+        border-color: yellow;
+        box-shadow: 0 0 8px rgba(255, 255, 0, 0.7);
+    }
+    66% {
+        border-color: limegreen;
+        box-shadow: 0 0 8px rgba(0, 255, 0, 0.7);
+    }
+    100% {
+        border-color: red;
+        box-shadow: 0 0 8px rgba(255, 0, 0, 0.7);
+    }
+}

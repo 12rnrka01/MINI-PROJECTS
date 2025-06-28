@@ -1,23 +1,123 @@
 <header>
-    <nav>
-        <div class="nav-container">
-            <h1 class="logo">
-                <a href="/" style="display: flex; align-items: center;">
-                    <img src="/images/we1.png" alt="We1" width="50" height="50"/>
-                    <span>Hangout</span>
-                </a>
-            </h1>
-            <ul class="nav-links">
-                <div class="sound-controls">
-                    <button id="sound-toggle" class="sound-btn">🔊</button>
-                    <input type="range" id="volume-slider" min="0" max="100" value="30" class="volume-slider">
-                </div>
-                <% if (typeof gameType !== 'undefined') { %>
-                    <li><a href="/">Home</a></li>
-                    <li><a href="#" onclick="createQuickRoom()">Quick Game</a></li>
-                    <li><span class="current-game">Playing: <%= gameType.toUpperCase() %></span></li>
-                <% } %>
-            </ul>
-        </div>
-    </nav>
+  <nav>
+    <div class="nav-container">
+      <h1 class="logo">
+        <a href="/" style="display: flex; align-items: center;">
+          <img src="/images/we1.png" alt="We1" width="50" height="50"/>
+          <span>Hangout</span>
+        </a>
+      </h1>
+      <ul class="nav-links">
+        <!-- Moved sound-controls outside ul or replace with li -->
+        <li class="sound-controls" style="display: flex; align-items: center; gap: 10px;">
+          <button id="sound-toggle" class="sound-btn">🔊</button>
+          <input type="range" id="volume-slider" min="0" max="100" value="30" class="volume-slider" />
+        </li>
+        <% if (typeof gameType !== 'undefined') { %>
+          <li><a href="/">Home</a></li>
+          <li><a href="#" onclick="createQuickRoom()">Quick Game</a></li>
+          <li><span class="current-game">Playing: <%= gameType.toUpperCase() %></span></li>
+        <% } %>
+      </ul>
+
+      <!-- Sidebar toggle button -->
+      <% if (typeof gameType !== 'undefined') { %>
+      <button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">☰</button>
+      <% } %>
+    </div>
+  </nav>
 </header>
+
+
+
+<!-- Sidebar markup -->
+    <% if (typeof gameType !== 'undefined') { %>
+        <div id="sidebar" class="sidebar" aria-hidden="true">
+        <button class="close-sidebar" onclick="toggleSidebar()" aria-label="Close menu">×</button>
+        <ul class="sidebar-links">
+                <li><a href="/">Home</a></li>
+                <li><a href="#" onclick="createQuickRoom()">Quick Game</a></li>
+        </ul>
+        </div>
+    <% } %>
+
+<style>
+  /* Sidebar toggle button - hidden on desktop */
+  .sidebar-toggle {
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 28px;
+    cursor: pointer;
+    display: none;
+  }
+
+  /* Sidebar styling */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: -260px;
+    width: 250px;
+    height: 100%;
+    background: #fff;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.3);
+    padding: 20px;
+    transition: left 0.3s ease;
+    z-index: 1001;
+    overflow-y: auto;
+  }
+
+  .sidebar.active {
+    left: 0;
+  }
+
+  .sidebar-links {
+    list-style: none;
+    padding: 0;
+    margin-top: 40px;
+  }
+
+  .sidebar-links li {
+    margin: 15px 0;
+  }
+
+  .sidebar-links a, .sidebar-links span {
+    color: #333;
+    font-size: 18px;
+    text-decoration: none;
+    display: block;
+  }
+
+  .close-sidebar {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    background: transparent;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    color: #333;
+  }
+
+  /* Show toggle on small screens only */
+  @media (max-width: 768px) {
+    .sidebar-toggle {
+      display: none; // block
+    }
+  }
+
+  /* Optional: hide main nav links on small screens (you can tweak this) */
+  @media (max-width: 768px) {
+    .nav-links {
+      display: none;
+    }
+  }
+</style>
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const isActive = sidebar.classList.toggle('active');
+    sidebar.setAttribute('aria-hidden', !isActive);
+  }
+</script>
